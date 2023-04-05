@@ -6,11 +6,14 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/Projeto 1/src"
             ],
-            "defines": [],
-            "compilerPath": "/usr/bin/clang-10",
-            "cStandard": "c17",
+            "defines": [
+                "_POSIX_C_SOURCE=200112L"
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "${default}",
             "cppStandard": "c++14",
-            "intelliSenseMode": "linux-clang-x64"
+            "intelliSenseMode": "${default}",
+            "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],
     "version": 4

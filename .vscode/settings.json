@@ -2,5 +2,6 @@
     "files.associations": {
         "stdio.h": "c",
         "common_def.h": "c"
-    }
+    },
+    "cmake.sourceDirectory": "${workspaceFolder}/Projeto 1"
 }

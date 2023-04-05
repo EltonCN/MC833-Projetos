@@ -1,108 +1,60 @@
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "requests_def.h"
 #include "responses_def.h"
 
-void REGISTER_handler()
+#define PORT 54321
+#define SERVER_IP "192.etc"
+
+int sockfd = -1;
+
+void openSocket()
 {
-    Request request;
-    request.type = ;
-    Response = send(request);
-    
-}
-
-void LIST_BY_COURSE_handler()
-{
-    Request request;
-    request.type = ;
-    Response = send(request);
-    
-}
-
-void LIST_BY_SKILL_handler()
-{
-    Request request;
-    request.type = ;
-    Response = send(request);
-    
-}
-
-void LIST_BY_YEAR_handler()
-{
-    Request request;
-    request.type = ;
-    Response = send(request);
-    
-}
-
-void LIST_ALL_handler()
-{
-    Request request;
-    request.type = ;
-    Response = send(request);
-    
-}
-
-void GET_BY_MAIL_handler()
-{
-    Request request;
-    request.type = ;
-    Response = send(request);
-    
-}
-
-void REMOVE_BY_MAIL_handler()
-{
-    Request request;
-    request.type = ;
-    Response = send(request);
-    
-}
-
-void exit_handler()
-{
-    printf("Bye!");
-    exit(EXIT_SUCCESS);
-}
-
-
-void (*handlers[])() = {
-                        REGISTER_handler, 
-                        LIST_BY_COURSE_handler, 
-                        LIST_BY_SKILL_handler, 
-                        LIST_BY_YEAR_handler, 
-                        LIST_ALL_handler, 
-                        GET_BY_MAIL_handler, 
-                        REMOVE_BY_MAIL_handler,
-                        exit_handler,
-                        };
-
-int main()
-{
-    printf("Choose operation:\n");
-
-    int option;
-
-    while(1)
+    if(sockfd == -1)
     {
-        printf("1 Create new registry\n");
-        printf("2 List registries by course\n");
-        printf("3 List registries by skill\n");
-        printf("4 List registries by year\n");
-        printf("5 List all registries\n");
-        printf("6 Get registry by mail\n");
-        printf("7 Remove registry by mail\n");
-        printf("0 Exit");
-    
-        
-        scanf("%d", &option);
+        struct addrinfo addr_info;
 
-        if(option <=7 && option >= 0)
-        {
-            break;
-        }
+        struct sockaddr_in server;
+        server.sin_family = AF_INET;
+        server.sin_port = htons(PORT);
+        server.sin_addr.s_addr = inet_addr(SERVER_IP);
+
+        sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        connect(sockfd, (struct sockaddr *) &server, sizeof(struct sockaddr_in));
     }
 
+    if(sockfd == -1)
+    {
+        printf("ERROR OPENING THE SOCKET. CAN'T DO NOTHING, SORRY.");
+        exit(EXIT_SUCCESS);
+    }
+}
 
+void closeSocket()
+{
+    if(sockfd != -1)
+    {
+        close(sockfd);
+    }
+}
+
+Response sendAndReceive(Request request)
+{
+    openSocket();
+
+    int len = sizeof(Request);
+    send(sockfd, (void *) &request, len, 0);
+
+    Response response;
+    recv(sockfd, (void *) &response, sizeof(Response), MSG_WAITALL);
+
+    int nRegistry = response.registries.nRegistry;
+    if(nRegistry != 0)
+    {
+        recv(sockfd, (void *) &response.registries.registries, nRegistry*sizeof(Registry), MSG_WAITALL);
+    }
 }

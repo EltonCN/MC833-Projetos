@@ -1,12 +1,7 @@
 #include "common_def.h"
 
 #ifndef RESPONSES_DEF
-#define RESPONSEs_DEF
-
-struct Response
-{
-    int code;
-};
+#define RESPONSES_DEF
 
 struct ListRegistriesResponse
 {
@@ -14,7 +9,14 @@ struct ListRegistriesResponse
     Registry registries[]; 
 };
 
-typedef struct Response Response;
 typedef struct ListRegistriesResponse ListRegistriesResponse;
+
+struct Response
+{
+    int code;
+    ListRegistriesResponse registries;
+};
+
+typedef struct Response Response;
 
 #endif

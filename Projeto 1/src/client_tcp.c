@@ -8,7 +8,7 @@
 #include "responses_def.h"
 
 #define PORT 54321
-#define SERVER_IP "192.etc"
+#define SERVER_IP "127.0.0.1"
 
 int sockfd = -1;
 
@@ -24,13 +24,13 @@ void openSocket()
         server.sin_addr.s_addr = inet_addr(SERVER_IP);
 
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
-        connect(sockfd, (struct sockaddr *) &server, sizeof(struct sockaddr_in));
-    }
-
-    if(sockfd == -1)
-    {
-        printf("ERROR OPENING THE SOCKET. CAN'T DO NOTHING, SORRY.");
-        exit(EXIT_SUCCESS);
+        int returnCode = connect(sockfd, (struct sockaddr *) &server, sizeof(struct sockaddr_in));
+    
+        if(returnCode < 0 || sockfd == -1)
+        {
+            printf("ERROR OPENING THE SOCKET. CAN'T DO NOTHING, SORRY.");
+            exit(EXIT_SUCCESS);
+        }
     }
 }
 

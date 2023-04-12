@@ -84,7 +84,7 @@ void REGISTER_handler()
         printf("Skill %d (max 9 char): ", i);
         scanf("%s", &skill);
 
-        for(int j = 0; j<9; i++)
+        for(int j = 0; j<9; j++)
         {
             request.body.registerRequest.registry.skills[index] = skill[j];
             index += 1;

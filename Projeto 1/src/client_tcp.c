@@ -53,8 +53,14 @@ Response sendAndReceive(Request request)
     recv(sockfd, (void *) &response, sizeof(Response), MSG_WAITALL);
 
     int nRegistry = response.registries.nRegistry;
-    if(nRegistry != 0)
+
+    if(nRegistry > 0)
     {
-        recv(sockfd, (void *) &response.registries.registries, nRegistry*sizeof(Registry), MSG_WAITALL);
+        Response* response2 = malloc(sizeof(Response)+(nRegistry*sizeof(Registry)));
+        recv(sockfd, (void *) &response2->registries.registries, nRegistry*sizeof(Registry), MSG_WAITALL);
+
+        // TODO MEMORY LEAK OH NO!!!!!
+        return *response2;
     }
+    return response;
 }

@@ -5,9 +5,9 @@
 #include "responses_def.h"
 #include "client_implementation.h"
 
-void printDefaultResponse(Response response)
+void printDefaultResponse(Response* response)
 {
-    if(response.code == 1)
+    if(response->code == 1)
     {
         printf("Operation done!\n");
     }
@@ -17,24 +17,24 @@ void printDefaultResponse(Response response)
     }
 }
 
-void printListRegistriesResponse(Response response)
+void printListRegistriesResponse(Response* response)
 {
-    if(response.code != 1)
+    if(response->code != 1)
     {
         printf("Error :/ ...\n");
         return;
     }
 
-    int nRegistry = response.registries.nRegistry;
+    int nRegistry = response->registries.nRegistry;
     for(int i = 0; i<nRegistry; i++)
     {
-        printf("Mail: %s\n", response.registries.registries[i].mail);
-        printf("Name: %s\n", response.registries.registries[i].name);
-        printf("Surname: %s\n", response.registries.registries[i].surname);
-        printf("City: %s\n", response.registries.registries[i].city);
-        printf("Course: %s\n", response.registries.registries[i].course);
-        printf("Graduation year: %d\n", response.registries.registries[i].graduationYear);
-        printf("Skills: %s\n", response.registries.registries[i].city);
+        printf("Mail: %s\n", response->registries.registries[i].mail);
+        printf("Name: %s\n", response->registries.registries[i].name);
+        printf("Surname: %s\n", response->registries.registries[i].surname);
+        printf("City: %s\n", response->registries.registries[i].city);
+        printf("Course: %s\n", response->registries.registries[i].course);
+        printf("Graduation year: %d\n", response->registries.registries[i].graduationYear);
+        printf("Skills: %s\n", response->registries.registries[i].city);
         printf("\n");
     }
 }
@@ -94,9 +94,10 @@ void REGISTER_handler()
     }
     request.body.registerRequest.registry.skills[index-1] = "\0";
 
-    Response response = sendAndReceive(request);
+    Response* response = sendAndReceive(request);
 
     printDefaultResponse(response);
+    free(response);
 }
 
 void LIST_BY_COURSE_handler()
@@ -108,10 +109,10 @@ void LIST_BY_COURSE_handler()
     scanf("%s", &request.body.listByCourseRequest.course);
     printf("\n");
 
-    Response response = sendAndReceive(request);
+    Response* response = sendAndReceive(request);
     
     printListRegistriesResponse(response);
-
+    free(response);
 }
 
 void LIST_BY_SKILL_handler()
@@ -123,10 +124,10 @@ void LIST_BY_SKILL_handler()
     scanf("%s", &request.body.listBySkill.skill);
     printf("\n");
 
-    Response response = sendAndReceive(request);
+    Response* response = sendAndReceive(request);
     
     printListRegistriesResponse(response);
-    
+    free(response);
 }
 
 void LIST_BY_YEAR_handler()
@@ -138,21 +139,20 @@ void LIST_BY_YEAR_handler()
     scanf("%d", &request.body.listByYearRequest.graduationYear);
     printf("\n");
 
-    Response response = sendAndReceive(request);
+    Response* response = sendAndReceive(request);
     
     printListRegistriesResponse(response);
-
+    free(response);
 }
 
 void LIST_ALL_handler()
 {
     Request request;
     request.type = LIST_ALL;
-    Response response = sendAndReceive(request);
+    Response* response = sendAndReceive(request);
     
     printListRegistriesResponse(response);
-
-    
+    free(response);
 }
 
 void GET_BY_MAIL_handler()
@@ -164,10 +164,10 @@ void GET_BY_MAIL_handler()
     scanf("%s", &request.body.byMailRequest.mail);
     printf("\n");
 
-    Response response = sendAndReceive(request);
+    Response* response = sendAndReceive(request);
     
     printListRegistriesResponse(response);
-    
+    free(response);
 }
 
 void REMOVE_BY_MAIL_handler()
@@ -179,9 +179,10 @@ void REMOVE_BY_MAIL_handler()
     scanf("%s", &request.body.byMailRequest.mail);
     printf("\n");
 
-    Response response = sendAndReceive(request);
+    Response* response = sendAndReceive(request);
     
     printDefaultResponse(response);
+    free(response);
 }
 
 void exit_handler()

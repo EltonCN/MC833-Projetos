@@ -4,7 +4,7 @@
 #ifndef CLIENT_IMPLEMENTATION
 #define CLIENT_IMPLEMENTATION
 
-Response sendAndReceive(Request request);
+Response* sendAndReceive(Request request);
 void closeSocket();
 
 #endif

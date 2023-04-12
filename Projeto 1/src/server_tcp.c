@@ -111,7 +111,7 @@ void Test_BO(int argc, char **argv)
     Response* response;
     response = REGISTER_handler(request);
 
-    printf("1");
+    printf("Register responce code: %d\n", response->code);
     response = LIST_USER_handler(NULL);
 
     int nRegistry = response->registries.nRegistry;

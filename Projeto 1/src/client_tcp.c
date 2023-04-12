@@ -42,25 +42,25 @@ void closeSocket()
     }
 }
 
-Response sendAndReceive(Request request)
+Response* sendAndReceive(Request request)
 {
     openSocket();
 
     int len = sizeof(Request);
     send(sockfd, (void *) &request, len, 0);
 
-    Response response;
-    recv(sockfd, (void *) &response, sizeof(Response), MSG_WAITALL);
+    Response *response = malloc(sizeof(Response));
+    recv(sockfd, (void *) response, sizeof(Response), MSG_WAITALL);
 
-    int nRegistry = response.registries.nRegistry;
+    int nRegistry = response->registries.nRegistry;
 
     if(nRegistry > 0)
     {
-        Response* response2 = malloc(sizeof(Response)+(nRegistry*sizeof(Registry)));
-        recv(sockfd, (void *) &response2->registries.registries, nRegistry*sizeof(Registry), MSG_WAITALL);
+        free(response);
+        response = malloc(sizeof(Response)+(nRegistry*sizeof(Registry)));
+        recv(sockfd, (void *) response->registries.registries, nRegistry*sizeof(Registry), MSG_WAITALL);
 
-        // TODO MEMORY LEAK OH NO!!!!!
-        return *response2;
     }
+
     return response;
 }

@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +39,8 @@ void openSocket()
             printf("LISTEN FAILED!\n");
             exit(EXIT_FAILURE);
         }
+
+        printf("OPEN SOCKET\n");
     }
 
     if(sockfd == -1)
@@ -49,35 +52,42 @@ void openSocket()
 
 void processRequest(int client_fd)
 {
+    int recv_response;
     Request request;
     Response* response;
 
-    recv(client_fd, (void *) &request, sizeof(Request), MSG_WAITALL);
+    do
+    {
+        recv_response = recv(client_fd, (void *) &request, sizeof(Request), MSG_WAITALL);
 
-    /*if (request.type == REGISTER)
-        response = REGISTER_handler(request);
-    else if (request.type == REMOVE_BY_MAIL)
-        response = REMOVE_BY_MAIL_handler(request);
-    else if (request.type == LIST_ALL)
-        response = LIST_USER_handler(NULL);
-    else if (request.type == LIST_BY_COURSE)
-        response = LIST_BY_COURSE_handler(request);
-    else if (request.type == LIST_BY_SKILL)
-        response = LIST_BY_SKILL_handler(request);
-    else if (request.type == LIST_BY_YEAR)
-        response = LIST_BY_YEAR_handler(request);
-    else if (request.type == GET_BY_MAIL)
-        response = GET_BY_MAIL_handler(request);*/
+        if (request.type == REGISTER)
+            response = REGISTER_handler(request);
+        else if (request.type == REMOVE_BY_MAIL)
+            response = REMOVE_BY_MAIL_handler(request);
+        else if (request.type == LIST_ALL)
+            response = LIST_USER_handler(NULL);
+        else if (request.type == LIST_BY_COURSE)
+            response = LIST_BY_COURSE_handler(request);
+        else if (request.type == LIST_BY_SKILL)
+            response = LIST_BY_SKILL_handler(request);
+        else if (request.type == LIST_BY_YEAR)
+            response = LIST_BY_YEAR_handler(request);
+        else if (request.type == GET_BY_MAIL)
+            response = GET_BY_MAIL_handler(request);
 
-    // Se o Response tiver dados o mudar o sizeOF
-    send(client_fd, (void *) response, sizeof(Response), 0);
+        printf("Response - code: %d, nRegistry: %d", response->code, response->registries.nRegistry);
+
+        send(client_fd, (void *) response, sizeof(Response) + (response->registries.nRegistry*sizeof(Registry)), 0);
+
+        free(response);
+    } while (recv_response != 0 && recv_response != -1);
 }
 
 void Test_BO(int argc, char **argv)
 {
     printf("Compilado\n");
 
-    Request request;
+    /*Request request;
     request.type = REGISTER;
 
     sprintf(request.body.registerRequest.registry.mail, "test@gmail.com");
@@ -105,11 +115,11 @@ void Test_BO(int argc, char **argv)
     printf("\n");
 
     sprintf(request.body.registerRequest.registry.skills, "programador");
-    printf(request.body.registerRequest.registry.skills);
+    printf(request.body.registerRequest.registry.skills);*/
     printf("\n");
 
     Response* response;
-    response = REGISTER_handler(request);
+    //response = REGISTER_handler(request);
 
     printf("Register responce code: %d\n", response->code);
     response = LIST_USER_handler(NULL);
@@ -128,8 +138,6 @@ void Test_BO(int argc, char **argv)
         printf("Skills: %s\n", response->registries.registries[i].city);
         printf("\n");
     }
-
-    return 0;
 }
 
 int main(int argc, char **argv)
@@ -146,6 +154,7 @@ int main(int argc, char **argv)
         new_fd= accept(sockfd, (SA *) &cliaddr, &clilen);
 
         if ( (childpid = fork()) == 0) {    // child process
+            printf("FORK\n");
             close(sockfd);                  // close listening socket
             processRequest(new_fd);         // process the request
             exit (EXIT_SUCCESS);

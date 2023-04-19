@@ -7,6 +7,10 @@
 #include "requests_def.h"
 #include "responses_def.h"
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+
 #define DATABASE_IP "localhost"
 #define DATABASE_USER "root"
 #define DATABASE_PASSWORD "12345678"
@@ -39,15 +43,15 @@ MYSQL* connectDB()
     return conn;
 }
 
-Response REGISTER_handler(Request request)
+Response* REGISTER_handler(Request request)
 {
     MYSQL *conn = connectDB();
-    Response response;
+    Response *response = malloc(sizeof(Response) + sizeof(Registry));
     char *query;
 
-    response.code = 1;
+    response->code = 1;
 
-    asprintf(&query, "INSERT INTO Users(Mail, Name, Surname, City, Course, GraduationYear, Skills) VALUES ('%s', '%s', '%s', '%s', '%s', %i, '%s')",
+    asprintf(&query, "INSERT INTO Users(Mail, Name, Surname, City, Course, GraduationYear, Skills) VALUES ('%s', '%s', '%s', '%s', '%s', %d, '%s')",
         request.body.registerRequest.registry.mail,
         request.body.registerRequest.registry.name,
         request.body.registerRequest.registry.surname,
@@ -56,12 +60,12 @@ Response REGISTER_handler(Request request)
         request.body.registerRequest.registry.graduationYear,
         request.body.registerRequest.registry.skills);
 
-    printf(query);
+    printf("Execute query: %s\n", query);
 
     if (mysql_query(conn, query))
     {
         fprintf(stderr, "ERROR IN INSERT USER - %s\n", mysql_error(conn));
-        response.code = 0;
+        response->code = 0;
     }
 
     mysql_close(conn);
@@ -70,23 +74,25 @@ Response REGISTER_handler(Request request)
     return response;
 }
 
-Response REMOVER_handler(char where_cause[70])
+Response* REMOVER_handler(char where_cause[70])
 {
     MYSQL *conn = connectDB();
-    Response response;
+    Response *response = malloc(sizeof(Response) + sizeof(Registry));
     char *query;
 
-    response.code = 1;
+    response->code = 1;
 
     if (where_cause == NULL)
         asprintf(&query, "DELETE FROM Users");
     else
         asprintf(&query, "DELETE FROM Users WHERE %s", where_cause);
 
+    printf("Execute query: %s\n", query);
+
     if (mysql_query(conn, query))
     {
         fprintf(stderr, "ERROR IN DELETE USER - %s\n", mysql_error(conn));
-        response.code = 0;
+        response->code = 0;
     }
 
     mysql_close(conn);
@@ -98,7 +104,7 @@ Response REMOVER_handler(char where_cause[70])
 Response* LIST_USER_handler(char where_cause[70])
 {
     MYSQL *conn = connectDB();
-    Response *response = malloc(sizeof(Response) + (1*sizeof(Registry)));
+    Response *response = malloc(sizeof(Response) + sizeof(Registry));
     char *query;
 
     if (where_cause == NULL)
@@ -106,8 +112,7 @@ Response* LIST_USER_handler(char where_cause[70])
     else
         asprintf(&query, "SELECT * FROM Users WHERE %s", where_cause);
 
-    printf(query);
-    printf("\n");
+    printf("Execute query: %s\n", query);
 
     if (mysql_query(conn, query))
     {
@@ -143,7 +148,7 @@ Response* LIST_USER_handler(char where_cause[70])
                 strcpy(response2->registries.registries[index].surname, row[2]);
                 strcpy(response2->registries.registries[index].city, row[3]);
                 strcpy(response2->registries.registries[index].course, row[4]);
-                response2->registries.registries[index].graduationYear = row[5];
+                response2->registries.registries[index].graduationYear = atoi(row[5]);
                 strcpy(response2->registries.registries[index].skills, row[6]);
 
                 index += 1;
@@ -152,9 +157,9 @@ Response* LIST_USER_handler(char where_cause[70])
             mysql_free_result(result);
 
             mysql_close(conn);
+            free(response);
             free(query);
 
-            // TODO fix memory
             return response2;
         }
     }
@@ -198,7 +203,7 @@ Response* GET_BY_MAIL_handler(Request request)
     return LIST_USER_handler(where_cause);
 }
 
-Response REMOVE_BY_MAIL_handler(Request request)
+Response* REMOVE_BY_MAIL_handler(Request request)
 {
     char where_cause[70];
     sprintf(where_cause, "Mail = '%s'", request.body.byMailRequest.mail);

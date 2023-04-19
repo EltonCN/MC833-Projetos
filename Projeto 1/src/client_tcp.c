@@ -61,8 +61,7 @@ Response* sendAndReceive(Request request)
 
     if(nRegistry > 0)
     {
-        free(response);
-        response = malloc(sizeof(Response)+(nRegistry*sizeof(Registry)));
+        response = realloc(response, sizeof(Response)+(nRegistry*sizeof(Registry)));
         recv(sockfd, (void *) response->registries.registries, nRegistry*sizeof(Registry), MSG_WAITALL);
 
     }

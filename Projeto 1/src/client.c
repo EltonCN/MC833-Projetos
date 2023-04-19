@@ -5,6 +5,8 @@
 #include "responses_def.h"
 #include "client_implementation.h"
 
+/// @brief Print the response for operations that don't receive any data (see OperationType documentation).
+/// @param response Server response.
 void printDefaultResponse(Response* response)
 {
     if(response->code == 1)
@@ -17,6 +19,8 @@ void printDefaultResponse(Response* response)
     }
 }
 
+/// @brief Print the response for operations that receive a list of registries (see OperationType documentation).
+/// @param response 
 void printListRegistriesResponse(Response* response)
 {
     if(response->code != 1)
@@ -39,6 +43,7 @@ void printListRegistriesResponse(Response* response)
     }
 }
 
+/// @brief Handler for creating and sending a REGISTER request and showing the response.
 void REGISTER_handler()
 {
     Request request;
@@ -92,7 +97,10 @@ void REGISTER_handler()
         request.body.registerRequest.registry.skills[index] = ";";
         index += 1;
     }
-    request.body.registerRequest.registry.skills[index-1] = "\0";
+    if(index != 0)
+    {
+        request.body.registerRequest.registry.skills[index-1] = "\0";
+    }
 
     Response* response = sendAndReceive(request);
 
@@ -100,6 +108,7 @@ void REGISTER_handler()
     free(response);
 }
 
+/// @brief Handler for creating and sending a LIST_BY_COURSE request and showing the response.
 void LIST_BY_COURSE_handler()
 {
     Request request;
@@ -115,6 +124,7 @@ void LIST_BY_COURSE_handler()
     free(response);
 }
 
+/// @brief Handler for creating and sending a LIST_BY_SKYLL request and showing the response.
 void LIST_BY_SKILL_handler()
 {
     Request request;
@@ -130,6 +140,7 @@ void LIST_BY_SKILL_handler()
     free(response);
 }
 
+/// @brief Handler for creating and sending a LIST_BY_YEAR request and showing the response.
 void LIST_BY_YEAR_handler()
 {
     Request request;
@@ -145,6 +156,7 @@ void LIST_BY_YEAR_handler()
     free(response);
 }
 
+/// @brief Handler for creating and sending a LIST_ALL request and showing the response.
 void LIST_ALL_handler()
 {
     Request request;
@@ -155,6 +167,7 @@ void LIST_ALL_handler()
     free(response);
 }
 
+/// @brief Handler for creating and sending a GET_BY_MAIL request and showing the response.
 void GET_BY_MAIL_handler()
 {
     Request request;
@@ -170,6 +183,7 @@ void GET_BY_MAIL_handler()
     free(response);
 }
 
+/// @brief Handler for creating and sending a REMOVE_BY_MAIL request and showing the response.
 void REMOVE_BY_MAIL_handler()
 {
     Request request;
@@ -185,14 +199,23 @@ void REMOVE_BY_MAIL_handler()
     free(response);
 }
 
+void changeServerIp_handler()
+{
+    char* serverIp = malloc(17*sizeof(char));
+    printf("Enters server IP (with dots): ");
+    scanf("%s", serverIp);
+
+    changeServerIp(serverIp);
+}
+
+/// @brief Handler for the exit operation.
 void exit_handler()
 {
     printf("Bye!");
-    closeSocket();
     exit(EXIT_SUCCESS);
 }
 
-
+// Registers all the handlers (in the same order as expected by the menu).
 void (*handlers[])() = {
                         exit_handler,
                         REGISTER_handler, 
@@ -202,15 +225,19 @@ void (*handlers[])() = {
                         LIST_ALL_handler, 
                         GET_BY_MAIL_handler, 
                         REMOVE_BY_MAIL_handler,
+                        changeServerIp_handler,
                         };
 
 int main()
 {
-
+    //Register the exit function (closes the socket in the exit).
+    registerExit();
+    
     int option;
     
     while(1)
     {
+        // Menu
         printf("Choose operation:\n");
         printf("1 Create new registry\n");
         printf("2 List registries by course\n");
@@ -219,12 +246,13 @@ int main()
         printf("5 List all registries\n");
         printf("6 Get registry by mail\n");
         printf("7 Remove registry by mail\n");
+        printf("8 Change server IP (default is local host)\n");
         printf("0 Exit\n");
-    
         
         scanf("%d", &option);
 
-        if(option <=7 && option >= 0)
+        // Call the operation handler.
+        if(option <=8 && option >= 0)
         {
             handlers[option]();
         }

@@ -8,10 +8,11 @@
 #include "responses_def.h"
 
 #define PORT 54321
-#define SERVER_IP "127.0.0.1"
+char* SERVER_IP = "127.0.0.1";
 
 int sockfd = -1;
 
+/// @brief Opens the TCP socket
 void openSocket()
 {
     if(sockfd == -1)
@@ -34,6 +35,7 @@ void openSocket()
     }
 }
 
+/// @brief Closes the socket
 void closeSocket()
 {
     if(sockfd != -1)
@@ -41,6 +43,8 @@ void closeSocket()
         close(sockfd);
     }
 }
+
+// Public library functions (documentation in header) ---------------------------------
 
 Response* sendAndReceive(Request request)
 {
@@ -63,4 +67,21 @@ Response* sendAndReceive(Request request)
     }
 
     return response;
+}
+
+void registerExit()
+{
+    atexit(closeSocket);
+}
+
+void changeServerIp(char* serverIp)
+{
+    SERVER_IP = serverIp; 
+
+    if(sockfd != -1)
+    {
+        printf("\n\nServer was already connected. Reconnecting to new server address.\n\n");
+        closeSocket();
+        openSocket();
+    }
 }

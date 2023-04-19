@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +30,7 @@ void openSocket()
     
         if(returnCode < 0 || sockfd == -1)
         {
-            printf("ERROR OPENING THE SOCKET. CAN'T DO NOTHING, SORRY.");
+            printf("ERROR OPENING THE SOCKET. CAN'T DO NOTHING, SORRY.\n");
             exit(EXIT_SUCCESS);
         }
     }

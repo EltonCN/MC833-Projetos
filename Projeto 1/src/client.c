@@ -38,7 +38,7 @@ void printListRegistriesResponse(Response* response)
         printf("City: %s\n", response->registries.registries[i].city);
         printf("Course: %s\n", response->registries.registries[i].course);
         printf("Graduation year: %d\n", response->registries.registries[i].graduationYear);
-        printf("Skills: %s\n", response->registries.registries[i].city);
+        printf("Skills: %s\n", response->registries.registries[i].skills);
         printf("\n");
     }
 }
@@ -49,6 +49,8 @@ void REGISTER_handler()
     Request request;
     request.type = REGISTER;
 
+    char temp;
+
     printf("Enter the registry fields:\n");
     
     printf("mail (max 24 char): ");
@@ -56,19 +58,23 @@ void REGISTER_handler()
     printf("\n");
 
     printf("name (max 24 char): ");
-    scanf("%s", &request.body.registerRequest.registry.name);
+    scanf("%c",&temp);
+    scanf("%[^\n]", &request.body.registerRequest.registry.name);
     printf("\n");
 
     printf("surname (max 49 char): ");
-    scanf("%s", &request.body.registerRequest.registry.surname);
+    scanf("%c",&temp);
+    scanf("%[^\n]", &request.body.registerRequest.registry.surname);
     printf("\n");
 
     printf("city (max 24 char): ");
-    scanf("%s", &request.body.registerRequest.registry.city);
+    scanf("%c",&temp);
+    scanf("%[^\n]", &request.body.registerRequest.registry.city);
     printf("\n");
 
     printf("course (max 49 char): ");
-    scanf("%s", &request.body.registerRequest.registry.course);
+    scanf("%c",&temp);
+    scanf("%[^\n]", &request.body.registerRequest.registry.course);
     printf("\n");
 
     printf("graduation year: ");
@@ -80,27 +86,43 @@ void REGISTER_handler()
     scanf("%d", &nSkills);
     printf("\n");
 
-    request.body.registerRequest.registry.skills[0] = "\0";
+    request.body.registerRequest.registry.skills[0] = '\0';
 
     int index = 0;
     for(int i = 0; i<nSkills; i++)
     {
         char skill[10];
         printf("Skill %d (max 9 char): ", i);
-        scanf("%s", &skill);
+        scanf("%c",&temp);
+        scanf("%[^\n]", &skill);
 
         for(int j = 0; j<9; j++)
         {
+            if(skill[j] == NULL || skill[j] == '\0')
+            {
+                break;
+            }
+
             request.body.registerRequest.registry.skills[index] = skill[j];
             index += 1;
         }
-        request.body.registerRequest.registry.skills[index] = ";";
+        request.body.registerRequest.registry.skills[index] = ';';
         index += 1;
     }
     if(index != 0)
     {
-        request.body.registerRequest.registry.skills[index-1] = "\0";
+        request.body.registerRequest.registry.skills[index-1] = '\0';
     }
+
+    //Debug prints. Please ignore.
+    //printf("Name: %s\n", request.body.registerRequest.registry.name);
+    //printf("Mail: %s\n", request.body.registerRequest.registry.mail);
+    //printf("Surname: %s\n", request.body.registerRequest.registry.surname);
+    //printf("City: %s\n", request.body.registerRequest.registry.city);
+    //printf("Course: %s\n", request.body.registerRequest.registry.course);
+    //printf("Graduation year: %d\n", request.body.registerRequest.registry.graduationYear);
+    //printf("Skills: %s\n", request.body.registerRequest.registry.skills);
+    //printf("\n");
 
     Response* response = sendAndReceive(request);
 
@@ -113,9 +135,11 @@ void LIST_BY_COURSE_handler()
 {
     Request request;
     request.type = LIST_BY_COURSE;
-
+    
+    char temp;
     printf("Enter course (max 49 char): ");
-    scanf("%s", &request.body.listByCourseRequest.course);
+    scanf("%c",&temp);
+    scanf("%[^\n]", &request.body.listByCourseRequest.course);
     printf("\n");
 
     Response* response = sendAndReceive(request);
@@ -130,8 +154,10 @@ void LIST_BY_SKILL_handler()
     Request request;
     request.type = LIST_BY_SKILL;
 
+    char temp;
     printf("Enter skill (max 9 char): ");
-    scanf("%s", &request.body.listBySkill.skill);
+    scanf("%c",&temp);
+    scanf("%[^\n]", &request.body.listBySkill.skill);
     printf("\n");
 
     Response* response = sendAndReceive(request);
@@ -146,8 +172,10 @@ void LIST_BY_YEAR_handler()
     Request request;
     request.type = LIST_BY_YEAR;
     
+    char temp;
     printf("Enter course (max 49 char): ");
-    scanf("%d", &request.body.listByYearRequest.graduationYear);
+    scanf("%c",&temp);
+    scanf("%[^\n]", &request.body.listByYearRequest.graduationYear);
     printf("\n");
 
     Response* response = sendAndReceive(request);

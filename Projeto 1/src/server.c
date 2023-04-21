@@ -15,10 +15,12 @@
 #define DATABASE_USER "root"
 #define DATABASE_PASSWORD "12345678"
 
+/// @brief Open connection with database
 MYSQL* connectDB()
 {
     MYSQL *conn = mysql_init(NULL);
 
+    // Connection with mysql
     if (mysql_real_connect(conn, DATABASE_IP, DATABASE_USER, DATABASE_PASSWORD,
             NULL, 0, NULL, 0) == NULL)
     {
@@ -29,6 +31,8 @@ MYSQL* connectDB()
 
     printf("Connected MySQL Server\n");
 
+    // Creates the database and table if they don't exist
+    // If they already exist, connect to them.
     if (mysql_query(conn, "CREATE DATABASE IF NOT EXISTS ServerDB") ||
     mysql_query(conn, "USE ServerDB") ||
     mysql_query(conn, "CREATE TABLE IF NOT EXISTS Users(Mail VARCHAR(25), name VARCHAR(25), surname VARCHAR(50), city VARCHAR(25), course VARCHAR(50), graduationYear INT, skills VARCHAR(100))"))
@@ -43,6 +47,7 @@ MYSQL* connectDB()
     return conn;
 }
 
+/// @brief Add a new user to the database
 Response* REGISTER_handler(Request request)
 {
     MYSQL *conn = connectDB();
@@ -50,6 +55,7 @@ Response* REGISTER_handler(Request request)
     char *query;
 
     response->code = 1;
+    response->registries.nRegistry = 0;
 
     asprintf(&query, "INSERT INTO Users(Mail, Name, Surname, City, Course, GraduationYear, Skills) VALUES ('%s', '%s', '%s', '%s', '%s', %d, '%s')",
         request.body.registerRequest.registry.mail,
@@ -74,6 +80,7 @@ Response* REGISTER_handler(Request request)
     return response;
 }
 
+/// @brief Remove users to the database
 Response* REMOVER_handler(char where_cause[70])
 {
     MYSQL *conn = connectDB();
@@ -81,6 +88,7 @@ Response* REMOVER_handler(char where_cause[70])
     char *query;
 
     response->code = 1;
+    response->registries.nRegistry = 0;
 
     if (where_cause == NULL)
         asprintf(&query, "DELETE FROM Users");
@@ -101,6 +109,7 @@ Response* REMOVER_handler(char where_cause[70])
     return response;
 }
 
+/// @brief Get users to the database
 Response* LIST_USER_handler(char where_cause[70])
 {
     MYSQL *conn = connectDB();
@@ -130,6 +139,8 @@ Response* LIST_USER_handler(char where_cause[70])
         {
             int rows_size = mysql_num_rows(result);
 
+            printf("%d rows.\n", rows_size);
+
             Response* response2  = malloc(sizeof(Response) + (rows_size*sizeof(Registry)));
 
             response2->code = 1;
@@ -141,7 +152,7 @@ Response* LIST_USER_handler(char where_cause[70])
 
             while ((row = mysql_fetch_row(result)))
             {
-                printf("%s\n\n", row[0]);
+                printf("Row %d: %s, %s, %s, %s, %s, %s, %s\n", index, row[0], row[1], row[2], row[3], row[4], row[5], row[6]);
 
                 strcpy(response2->registries.registries[index].mail, row[0]);
                 strcpy(response2->registries.registries[index].name, row[1]);
@@ -171,6 +182,7 @@ Response* LIST_USER_handler(char where_cause[70])
 
 }
 
+/// @brief Get user based on course
 Response* LIST_BY_COURSE_handler(Request request)
 {
     char where_cause[70];
@@ -179,6 +191,7 @@ Response* LIST_BY_COURSE_handler(Request request)
     return LIST_USER_handler(where_cause);
 }
 
+/// @brief Get user based on skill
 Response* LIST_BY_SKILL_handler(Request request)
 {
     char where_cause[70];
@@ -187,6 +200,7 @@ Response* LIST_BY_SKILL_handler(Request request)
     return LIST_USER_handler(where_cause);
 }
 
+/// @brief Get user based on graduation year
 Response* LIST_BY_YEAR_handler(Request request)
 {
     char where_cause[70];
@@ -195,6 +209,7 @@ Response* LIST_BY_YEAR_handler(Request request)
     return LIST_USER_handler(where_cause);
 }
 
+/// @brief Get user based on email
 Response* GET_BY_MAIL_handler(Request request)
 {
     char where_cause[70];
@@ -203,6 +218,7 @@ Response* GET_BY_MAIL_handler(Request request)
     return LIST_USER_handler(where_cause);
 }
 
+/// @brief Remove user based on email
 Response* REMOVE_BY_MAIL_handler(Request request)
 {
     char where_cause[70];

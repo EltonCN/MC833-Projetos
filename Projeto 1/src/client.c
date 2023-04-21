@@ -173,9 +173,8 @@ void LIST_BY_YEAR_handler()
     request.type = LIST_BY_YEAR;
     
     char temp;
-    printf("Enter course (max 49 char): ");
-    scanf("%c",&temp);
-    scanf("%[^\n]", &request.body.listByYearRequest.graduationYear);
+    printf("Enter graduation year: ");
+    scanf("%d", &request.body.listByYearRequest.graduationYear);
     printf("\n");
 
     Response* response = sendAndReceive(request);
@@ -239,7 +238,7 @@ void changeServerIp_handler()
 /// @brief Handler for the exit operation.
 void exit_handler()
 {
-    printf("Bye!");
+    printf("Bye!\n");
     exit(EXIT_SUCCESS);
 }
 

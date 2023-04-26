@@ -35,7 +35,7 @@ MYSQL* connectDB()
     // If they already exist, connect to them.
     if (mysql_query(conn, "CREATE DATABASE IF NOT EXISTS ServerDB") ||
     mysql_query(conn, "USE ServerDB") ||
-    mysql_query(conn, "CREATE TABLE IF NOT EXISTS Users(Mail VARCHAR(25), name VARCHAR(25), surname VARCHAR(50), city VARCHAR(25), course VARCHAR(50), graduationYear INT, skills VARCHAR(100))"))
+    mysql_query(conn, "CREATE TABLE IF NOT EXISTS Users(Mail VARCHAR(25), name VARCHAR(25), surname VARCHAR(50), city VARCHAR(25), course VARCHAR(50), graduationYear INT, skills VARCHAR(100), PRIMARY KEY (Mail))"))
     {
         fprintf(stderr, "ERROR IN CONNECT DATABASE - %s\n", mysql_error(conn));
         mysql_close(conn);
@@ -195,7 +195,7 @@ Response* LIST_BY_COURSE_handler(Request request)
 Response* LIST_BY_SKILL_handler(Request request)
 {
     char where_cause[70];
-    sprintf(where_cause, "Skills like '%s'", request.body.listBySkill.skill);
+    sprintf(where_cause, "Skills like '%c%s%c'", '%', request.body.listBySkill.skill, '%');
 
     return LIST_USER_handler(where_cause);
 }

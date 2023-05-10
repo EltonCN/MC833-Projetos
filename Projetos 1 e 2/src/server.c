@@ -185,7 +185,6 @@ Response* GET_photo(char mail[25])
     free(query);
 
     return response;
-
 }
 
 /// @brief Remove users to the database
@@ -287,7 +286,6 @@ Response* LIST_USER_handler(char where_cause[70])
     free(query);
 
     return response;
-
 }
 
 /// @brief Get user based on course
@@ -329,8 +327,11 @@ Response* GET_BY_MAIL_handler(Request request)
 /// @brief Remove user based on email
 Response* REMOVE_BY_MAIL_handler(Request request)
 {
+    Response* response;
     char where_cause[70];
     sprintf(where_cause, "Mail = '%s'", request.body.byMailRequest.mail);
+
+    REMOVER_photo(request.body.byMailRequest.mail);
 
     return REMOVER_handler(where_cause);
 }

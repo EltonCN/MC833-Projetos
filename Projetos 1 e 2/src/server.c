@@ -35,6 +35,7 @@ MYSQL* connectDB()
     // If they already exist, connect to them.
     if (mysql_query(conn, "CREATE DATABASE IF NOT EXISTS ServerDB") ||
     mysql_query(conn, "USE ServerDB") ||
+    mysql_query(conn, "CREATE TABLE IF NOT EXISTS Photos(Mail VARCHAR(25), Photo VARCHAR(MAX), PRIMARY KEY (Mail))") ||
     mysql_query(conn, "CREATE TABLE IF NOT EXISTS Users(Mail VARCHAR(25), name VARCHAR(25), surname VARCHAR(50), city VARCHAR(25), course VARCHAR(50), graduationYear INT, skills VARCHAR(100), PRIMARY KEY (Mail))"))
     {
         fprintf(stderr, "ERROR IN CONNECT DATABASE - %s\n", mysql_error(conn));
@@ -72,6 +73,112 @@ Response* REGISTER_handler(Request request)
     {
         fprintf(stderr, "ERROR IN INSERT USER - %s\n", mysql_error(conn));
         response->code = 0;
+    }
+
+    mysql_close(conn);
+    free(query);
+
+    return response;
+}
+
+/// @brief Add a new photo to the database
+Response* INSERT_photo(Request request)
+{
+    MYSQL *conn = connectDB();
+    Response *response = malloc(sizeof(Response) + sizeof(Registry));
+    char *query;
+
+    response->code = 1;
+    response->registries.nRegistry = 0;
+
+    asprintf(&query, "INSERT INTO Photos(Mail, Photo) VALUES ('%s', '%s')",
+        request.body.registerRequest.registry.mail,
+        request.body.registerRequest.registry.name);
+
+    printf("Execute query: %s\n", query);
+
+    if (mysql_query(conn, query))
+    {
+        fprintf(stderr, "ERROR IN INSERT PHOTO - %s\n", mysql_error(conn));
+        response->code = 0;
+    }
+
+    mysql_close(conn);
+    free(query);
+
+    return response;
+}
+
+/// @brief Remove photo to the database
+Response* REMOVER_photo(char mail[25])
+{
+    MYSQL *conn = connectDB();
+    Response *response = malloc(sizeof(Response) + sizeof(Registry));
+    char *query;
+
+    response->code = 1;
+    response->registries.nRegistry = 0;
+
+    asprintf(&query, "DELETE FROM Photos WHERE Mail = '%s'", mail);
+
+    printf("Execute query: %s\n", query);
+
+    if (mysql_query(conn, query))
+    {
+        fprintf(stderr, "ERROR IN DELETE PHOTO - %s\n", mysql_error(conn));
+        response->code = 0;
+    }
+
+    mysql_close(conn);
+    free(query);
+
+    return response;
+}
+
+/// @brief Get a photo to the database
+Response* GET_photo(char mail[25])
+{
+    MYSQL *conn = connectDB();
+    Response *response = malloc(sizeof(Response) + sizeof(Registry));
+    char *query;
+
+    asprintf(&query, "SELECT * FROM Users WHERE Mail = '%s'", mail);
+
+    printf("Execute query: %s\n", query);
+
+    if (mysql_query(conn, query))
+    {
+        fprintf(stderr, "ERROR IN SELECT PHOTO - %s\n", mysql_error(conn));
+        response->code = 0;
+    }
+    else
+    {
+        MYSQL_RES *result = mysql_store_result(conn);
+
+        response->code = 1;
+        response->registries.nRegistry = 0;
+
+        if (result != NULL && mysql_num_rows(result) > 0)
+        {
+            Response* response2  = malloc(sizeof(Response) + (sizeof(Registry)));
+
+            response2->code = 1;
+
+            response2->registries.nRegistry = 1;
+
+            MYSQL_ROW row = mysql_fetch_row(result);
+
+            // TODO: corrigir!
+            strcpy(response2->registries.registries[0].mail, row[1]);
+
+            mysql_free_result(result);
+
+            mysql_close(conn);
+            free(response);
+            free(query);
+
+            return response2;
+        }
     }
 
     mysql_close(conn);
@@ -179,7 +286,6 @@ Response* LIST_USER_handler(char where_cause[70])
     free(query);
 
     return response;
-
 }
 
 /// @brief Get user based on course
@@ -221,8 +327,11 @@ Response* GET_BY_MAIL_handler(Request request)
 /// @brief Remove user based on email
 Response* REMOVE_BY_MAIL_handler(Request request)
 {
+    Response* response;
     char where_cause[70];
     sprintf(where_cause, "Mail = '%s'", request.body.byMailRequest.mail);
+
+    REMOVER_photo(request.body.byMailRequest.mail);
 
     return REMOVER_handler(where_cause);
 }

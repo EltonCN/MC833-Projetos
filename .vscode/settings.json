@@ -1,7 +1,9 @@
 {
     "files.associations": {
         "stdio.h": "c",
-        "common_def.h": "c"
+        "common_def.h": "c",
+        "socket.h": "c",
+        "inet.h": "c"
     },
     "cmake.sourceDirectory": "${workspaceFolder}/Projeto 1",
     "cmake.configureOnOpen": false

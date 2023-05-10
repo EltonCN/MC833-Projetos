@@ -160,11 +160,11 @@ Response* GET_photo(char mail[25])
 
         if (result != NULL && mysql_num_rows(result) > 0)
         {
-            Response* response2  = malloc(sizeof(Response) + (rows_size*sizeof(Registry)));
+            Response* response2  = malloc(sizeof(Response) + (sizeof(Registry)));
 
             response2->code = 1;
 
-            response2->registries.nRegistry = rows_size;
+            response2->registries.nRegistry = 1;
 
             MYSQL_ROW row = mysql_fetch_row(result);
 

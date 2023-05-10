@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
+#include "sys/un.h"
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <netdb.h>
@@ -7,17 +8,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
-#include <unp.h>
 
 #include "requests_def.h"
 #include "responses_def.h"
 #include "server.h"
 
 #define PORT 54321
+#define SA struct sockaddr
 #define SERVER_IP "0.0.0.0"
 
 /// @brief Processing of incoming requests
-Response* processRequest(Request request;)
+Response* processRequest(Request request)
 {
     Response* response;
 
@@ -51,9 +52,12 @@ void dg_echo(int sockfd, SA *pcliaddr, socklen_t clilen)
 
     for ( ; ; ) {
         len = clilen;
-        n = recvfrom (sockfd, request, sizeof(Request), 0, pcliaddr, &len);
-        response = processRequest(request);
-        sendto (sockfd, (void *) response, sizeof(Response) + (response->registries.nRegistry*sizeof(Registry)), 0, pcliaddr, len);
+        n = recvfrom (sockfd, (void *) &request, sizeof(Request), 0, pcliaddr, &len);
+
+        if (n != -1) {
+            response = processRequest(request);
+            sendto (sockfd, (void *) response, sizeof(Response) + (response->registries.nRegistry*sizeof(Registry)), 0, pcliaddr, len);
+        }
     }
 }
 
@@ -66,8 +70,8 @@ int main(int argc, char **argv)
     bzero (&servaddr, sizeof(servaddr));
     
     servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons (PORT);
-    servaddr.sin_addr.s_addr = htonl (SERVER_IP);
+    servaddr.sin_port = htons(PORT);
+    servaddr.sin_addr.s_addr = inet_addr(SERVER_IP);
 
     bind (sockfd, (SA *) &servaddr, sizeof(servaddr));
 

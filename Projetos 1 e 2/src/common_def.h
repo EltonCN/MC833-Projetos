@@ -10,6 +10,7 @@
 *   LIST_ALL: List all registries. Returns data.
 *   GET_BY_MAIL: List all registries filtering by mail. Returns data.
 *   REMOVE_BY_MAIL: Remove a registry by mail. Doesn't return data.
+*   SEND_IMAGE: Send a registry image. Doesn't return data.
 *   GET_IMAGE_BY_MAIL:  registry image by mail. Return data. Not implemented with TCP. 
 *
 */
@@ -22,6 +23,7 @@ enum OperationType
     LIST_ALL,
     GET_BY_MAIL,
     REMOVE_BY_MAIL,
+    SEND_IMAGE,
     GET_IMAGE_BY_MAIL
 };
 
@@ -37,7 +39,15 @@ struct Registry
     char skills[100];
 };
 
+/// @brief Stores a registry image
+struct RegistryImage
+{
+    int imageSize;
+    char image[];
+};
+
 typedef enum OperationType OperationType;
 typedef struct Registry Registry;
+typedef struct RegistryImage RegistryImage;
 
 #endif

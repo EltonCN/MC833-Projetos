@@ -7,7 +7,7 @@
 /// @brief Send request and wait for the response.
 /// @param request Request being sent
 /// @return Server response for the request. Must be deallocated after use.
-Response* sendAndReceive(Request request);
+Response* sendAndReceive(Request *request);
 
 /// @brief Register the exit function for closing the connection.
 void registerExit();

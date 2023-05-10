@@ -47,22 +47,31 @@ void closeSocket()
 
 // Public library functions (documentation in header) ---------------------------------
 
-Response* sendAndReceive(Request request)
+Response* sendAndReceive(Request *request)
 {
+    if(request->type == SEND_IMAGE || request->type == GET_IMAGE_BY_MAIL)
+    {
+        printf("TCP cannot do image operations. Aborting.\n");
+
+        Response *response = malloc(sizeof(Response));
+        response->code = 0;
+        return response;
+    }
+
     openSocket();
 
     int len = sizeof(Request);
-    send(sockfd, (void *) &request, len, 0);
+    send(sockfd, (void *) request, len, 0);
 
     Response *response = malloc(sizeof(Response));
     recv(sockfd, (void *) response, sizeof(Response), MSG_WAITALL);
 
-    int nRegistry = response->registries.nRegistry;
+    int nRegistry = response->nRegistry;
 
     if(nRegistry > 0)
     {
         response = realloc(response, sizeof(Response)+(nRegistry*sizeof(Registry)));
-        recv(sockfd, (void *) response->registries.registries, nRegistry*sizeof(Registry), MSG_WAITALL);
+        recv(sockfd, (void *) response->data, nRegistry*sizeof(Registry), MSG_WAITALL);
 
     }
 

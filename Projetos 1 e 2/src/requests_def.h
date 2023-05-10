@@ -34,11 +34,17 @@ struct ByMailRequest
     char mail[25];
 };
 
+struct ImageRequest
+{
+    RegistryImage image;
+};
+
 typedef struct RegisterRequest RegisterRequest;
 typedef struct ListByCourseRequest ListByCourseRequest;
 typedef struct ListBySkill ListBySkill;
 typedef struct ListByYear ListByYear;
 typedef struct ByMailRequest ByMailRequest; 
+typedef struct ImageRequest ImageRequest;
 
 /// @brief Request data. Can be any of the defined requests.
 union RequestBody
@@ -48,6 +54,7 @@ union RequestBody
     ListBySkill listBySkill;
     ListByYear listByYearRequest;
     ByMailRequest byMailRequest;
+    ImageRequest imageRequest;
 };
 
 typedef union RequestBody RequestBody;

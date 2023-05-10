@@ -29,16 +29,19 @@ void printListRegistriesResponse(Response* response)
         return;
     }
 
-    int nRegistry = response->registries.nRegistry;
+    int nRegistry = response->nRegistry;
+
+    Registry *registries = &response->data;
+
     for(int i = 0; i<nRegistry; i++)
     {
-        printf("Mail: %s\n", response->registries.registries[i].mail);
-        printf("Name: %s\n", response->registries.registries[i].name);
-        printf("Surname: %s\n", response->registries.registries[i].surname);
-        printf("City: %s\n", response->registries.registries[i].city);
-        printf("Course: %s\n", response->registries.registries[i].course);
-        printf("Graduation year: %d\n", response->registries.registries[i].graduationYear);
-        printf("Skills: %s\n", response->registries.registries[i].skills);
+        printf("Mail: %s\n", registries[i].mail);
+        printf("Name: %s\n", registries[i].name);
+        printf("Surname: %s\n", registries[i].surname);
+        printf("City: %s\n", registries[i].city);
+        printf("Course: %s\n", registries[i].course);
+        printf("Graduation year: %d\n", registries[i].graduationYear);
+        printf("Skills: %s\n", registries[i].skills);
         printf("\n");
     }
 }
@@ -124,7 +127,7 @@ void REGISTER_handler()
     //printf("Skills: %s\n", request.body.registerRequest.registry.skills);
     //printf("\n");
 
-    Response* response = sendAndReceive(request);
+    Response* response = sendAndReceive(&request);
 
     printDefaultResponse(response);
     free(response);
@@ -142,7 +145,7 @@ void LIST_BY_COURSE_handler()
     scanf("%[^\n]", &request.body.listByCourseRequest.course);
     printf("\n");
 
-    Response* response = sendAndReceive(request);
+    Response* response = sendAndReceive(&request);
     
     printListRegistriesResponse(response);
     free(response);
@@ -160,7 +163,7 @@ void LIST_BY_SKILL_handler()
     scanf("%[^\n]", &request.body.listBySkill.skill);
     printf("\n");
 
-    Response* response = sendAndReceive(request);
+    Response* response = sendAndReceive(&request);
     
     printListRegistriesResponse(response);
     free(response);
@@ -177,7 +180,7 @@ void LIST_BY_YEAR_handler()
     scanf("%d", &request.body.listByYearRequest.graduationYear);
     printf("\n");
 
-    Response* response = sendAndReceive(request);
+    Response* response = sendAndReceive(&request);
     
     printListRegistriesResponse(response);
     free(response);
@@ -188,7 +191,7 @@ void LIST_ALL_handler()
 {
     Request request;
     request.type = LIST_ALL;
-    Response* response = sendAndReceive(request);
+    Response* response = sendAndReceive(&request);
     
     printListRegistriesResponse(response);
     free(response);
@@ -204,7 +207,7 @@ void GET_BY_MAIL_handler()
     scanf("%s", &request.body.byMailRequest.mail);
     printf("\n");
 
-    Response* response = sendAndReceive(request);
+    Response* response = sendAndReceive(&request);
     
     printListRegistriesResponse(response);
     free(response);
@@ -220,9 +223,99 @@ void REMOVE_BY_MAIL_handler()
     scanf("%s", &request.body.byMailRequest.mail);
     printf("\n");
 
-    Response* response = sendAndReceive(request);
+    Response* response = sendAndReceive(&request);
     
     printDefaultResponse(response);
+    free(response);
+}
+
+void SEND_IMAGE_handler()
+{
+    Request *request = malloc(sizeof(Request));
+    request->type = SEND_IMAGE;
+
+    char image_path[200];
+
+    printf("Enter image path: ");
+    scanf("%s", &image_path);
+
+    char * buffer = 0;
+    FILE * file = fopen(image_path, "rb");
+
+    if(!file)
+    {
+        printf("Can't open file :/ . Operation canceled.");
+
+        free(request);
+        return;
+    }
+
+    fseek(file, 0, SEEK_END);
+    request->body.imageRequest.image.imageSize = ftell (file);
+    fseek (file, 0, SEEK_SET);
+        
+    realloc(request, sizeof(Request) + request->body.imageRequest.image.imageSize);
+ 
+    fread(request->body.imageRequest.image.image, 1, request->body.imageRequest.image.imageSize, file);
+        
+    fclose (file);
+
+    Response* response = sendAndReceive(&request);
+    
+    printDefaultResponse(response);
+    free(request);
+    free(response);
+
+}
+
+void GET_IMAGE_BY_MAIL_handler()
+{
+    Request request;
+    request.type = GET_IMAGE_BY_MAIL;
+    
+    printf("Enter mail (max 24 char): ");
+    scanf("%s", &request.body.byMailRequest.mail);
+    printf("\n");
+
+    Response* response = sendAndReceive(&request);
+
+    if(response->code != 1)
+    {
+        printf("Error :/ ...\n");
+        free(response);
+        return;
+    }
+
+    FILE *file = fopen("temp_image", "w");
+
+    int results = fputs(response->data, file);
+    if (results == EOF) 
+    {
+        printf("ERROR SAVING IMAGE.\n");
+        free(response);
+        return;
+    }
+    fclose(file);
+
+    char image_path[] = "temp_image";
+    char command[210];
+
+    snprintf(command, sizeof(command), "%s %s", "xdg-open", image_path);
+    int return_code = system(command);
+    printf("\nCODE: %d\n", return_code);
+
+    if(return_code != 0)
+    {
+        //Maybe is WSL
+        snprintf(command, sizeof(command), "%s %s", "wslview", image_path);
+        int return_code = system(command);
+        
+        if(return_code != 0)
+        {
+            printf("\nCan't show image :/ .\n");
+        }
+    }
+
     free(response);
 }
 
@@ -252,6 +345,7 @@ void (*handlers[])() = {
                         LIST_ALL_handler, 
                         GET_BY_MAIL_handler, 
                         REMOVE_BY_MAIL_handler,
+                        SEND_IMAGE_handler,
                         changeServerIp_handler,
                         };
 
@@ -273,7 +367,8 @@ int main()
         printf("5 List all registries\n");
         printf("6 Get registry by mail\n");
         printf("7 Remove registry by mail\n");
-        printf("8 Change server IP (default is local host)\n");
+        printf("8 Send profile image\n");
+        printf("9 Change server IP (default is local host)\n");
         printf("0 Exit\n");
         
         scanf("%d", &option);

@@ -34,11 +34,6 @@ struct ByMailRequest
     char mail[25];
 };
 
-struct ImageRequest
-{
-    RegistryImage image;
-};
-
 typedef struct RegisterRequest RegisterRequest;
 typedef struct ListByCourseRequest ListByCourseRequest;
 typedef struct ListBySkill ListBySkill;
@@ -54,7 +49,7 @@ union RequestBody
     ListBySkill listBySkill;
     ListByYear listByYearRequest;
     ByMailRequest byMailRequest;
-    ImageRequest imageRequest;
+    Image imageRequest;
 };
 
 typedef union RequestBody RequestBody;

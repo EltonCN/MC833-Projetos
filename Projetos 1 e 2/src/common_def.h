@@ -43,11 +43,46 @@ struct Registry
 struct RegistryImage
 {
     int imageSize;
+    char mail[25];
     char image[];
 };
 
 typedef enum OperationType OperationType;
 typedef struct Registry Registry;
 typedef struct RegistryImage RegistryImage;
+
+struct ImageFrag
+{
+    int size;
+    int maxSizePerPackage;
+    int nPackages;
+    int packageIndex;
+    int imageSize;
+    char mail[25];
+    char imageFrag[];
+};
+
+typedef struct ImageFrag ImageFrag;
+
+union ImageOrFrag
+{
+    RegistryImage image;
+    ImageFrag frag;
+};
+
+
+typedef union ImageOrFrag ImageOrFrag; 
+
+struct Image
+{
+    int isFragIfOne;
+    ImageOrFrag image;
+};
+
+typedef struct Image Image;
+
+ImageFrag* getImageFrag(int nPackages, int imageSize, int maxSizePerPackage, char* image, char* mail, int packageIndex);
+RegistryImage* restoreImage(ImageFrag** frags);
+
 
 #endif

@@ -5,9 +5,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <math.h>
+#include <string.h>
 
 #include "requests_def.h"
 #include "responses_def.h"
+
+#define MAX_IMAGE_SIZE_PER_PACKAGE 500.0
 
 #define PORT 54321
 char* SERVER_IP = "127.0.0.1";
@@ -39,15 +43,35 @@ void openSocket()
 Response* sendAndReceive(Request *request)
 {
     openSocket();
-
-    int len = sizeof(Request);
     
     if(request->type == SEND_IMAGE)
     {
-        len += request->body.imageRequest.image.imageSize;
-    }
+        int imageSize = request->body.imageRequest.image.image.imageSize;
+        int nPackage = ceil(((float) imageSize)/MAX_IMAGE_SIZE_PER_PACKAGE);
 
-    send(sockfd, (void *) request, len, 0);
+        Request* fragRequest = malloc(sizeof(Request)); 
+        request->body.imageRequest.isFragIfOne = 1;
+        request->type = SEND_IMAGE;
+
+        for(int i = 0; i<nPackage; i++)
+        {
+
+            ImageFrag* frag = getImageFrag(nPackage, imageSize, MAX_IMAGE_SIZE_PER_PACKAGE, 
+                            &(request->body.imageRequest.image.image), 
+                            &(request->body.imageRequest.image.image.mail),
+                            i);
+            
+            realloc(request, sizeof(Request)+(frag->size*sizeof(char)));
+            memcpy(&(request->body.imageRequest.image.frag), frag, sizeof(ImageFrag)+(frag->size*sizeof(char)));
+            free(frag);
+
+            send(sockfd, (void *) fragRequest, sizeof(Request)+(frag->size*sizeof(char)), 0);
+        }
+    }
+    else
+    {
+        send(sockfd, (void *) request, sizeof(Request), 0);
+    }
 
     Response *response = malloc(sizeof(Response));
     int return_code = recv(sockfd, (void *) response, sizeof(Response), MSG_WAITALL);
@@ -61,25 +85,17 @@ Response* sendAndReceive(Request *request)
         return response;
     }
 
-    int nRegistry = response->nRegistry;
-    int imageSize = response->imageSize;
-
-    int dataSize = 0;
-    if(nRegistry != 0)
+    if(response->type == LIST_BY_COURSE ||
+        response->type == LIST_BY_SKILL ||
+        response->type == LIST_BY_YEAR ||
+        response->type == LIST_ALL)
     {
-        dataSize = nRegistry*sizeof(Registry);
-    }
-    else if(imageSize != 0)
-    {
-        dataSize = imageSize;
-    }
+        int nRegistry = response->data.registries.nRegistry;
 
-    if(dataSize > 0)
-    {
-        response = realloc(response, sizeof(Response)+dataSize);
-        int return_code = recv(sockfd, (void *) response->data, dataSize, MSG_WAITALL);
+        response = realloc(response, sizeof(Response)+(nRegistry*sizeof(Registry)));
+        int return_code = recv(sockfd, (void *) response->data.registries.registries, (nRegistry*sizeof(Registry)), MSG_WAITALL);
 
-        if(return_code != dataSize)
+        if(return_code != nRegistry*sizeof(Registry))
         {
             printf("ERROR RECEIVING RESPONSE. OPERATION MAY HAVE BEEN PERFORMED.\n");
 
@@ -87,7 +103,11 @@ Response* sendAndReceive(Request *request)
             response->code = 0;
             return response;
         }
+    }
 
+    if(response->type == GET_IMAGE_BY_MAIL)
+    {
+        int nPackage = response->data.image.image.frag.nPackages;
     }
 
     return response;

@@ -65,13 +65,21 @@ Response* sendAndReceive(Request *request)
 
     Response *response = malloc(sizeof(Response));
     recv(sockfd, (void *) response, sizeof(Response), MSG_WAITALL);
-
-    int nRegistry = response->nRegistry;
+    
+    int nRegistry = 0;
+    if(response->type == LIST_BY_COURSE ||
+        response->type == LIST_BY_SKILL ||
+        response->type == LIST_BY_YEAR ||
+        response->type == LIST_ALL)
+    {
+        int nRegistry = response->data.registries.nRegistry;
+    }
+    
 
     if(nRegistry > 0)
     {
         response = realloc(response, sizeof(Response)+(nRegistry*sizeof(Registry)));
-        recv(sockfd, (void *) response->data, nRegistry*sizeof(Registry), MSG_WAITALL);
+        recv(sockfd, (void *) response->data.registries.registries, nRegistry*sizeof(Registry), MSG_WAITALL);
 
     }
 

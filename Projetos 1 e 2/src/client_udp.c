@@ -108,6 +108,8 @@ Response* sendAndReceive(Request *request)
     if(response->type == GET_IMAGE_BY_MAIL)
     {
         int nPackage = response->data.image.image.frag.nPackages;
+
+        // TODO RECEIVE IMAGE FRAGS
     }
 
     return response;

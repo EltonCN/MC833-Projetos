@@ -136,11 +136,11 @@ Response* sendAndReceive(Request *request)
 
         //Free every non-final-response memory
         free(img);
+        free(frags);
+        free(responses);
         for(int i = 0; i<nPackage; i++)
         {
             free(responses[i]);
-            free(frags);
-            free(responses);
         }
     }
 

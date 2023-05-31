@@ -2,7 +2,7 @@
 
 #include "common_def.h"
 
-char* getImageFrag(int nPackages, int imageSize, int maxSizePerPackage, char* image, char* mail, int packageIndex)
+ImageFrag* getImageFrag(int nPackages, int imageSize, int maxSizePerPackage, char* image, char* mail, int packageIndex)
 {
     int size = maxSizePerPackage;
 

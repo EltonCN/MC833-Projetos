@@ -29,9 +29,9 @@ void printListRegistriesResponse(Response* response)
         return;
     }
 
-    int nRegistry = response->nRegistry;
+    int nRegistry = response->data.registries.nRegistry;
 
-    Registry *registries = &response->data;
+    Registry *registries = &(response->data.registries.registries);
 
     for(int i = 0; i<nRegistry; i++)
     {
@@ -251,12 +251,13 @@ void SEND_IMAGE_handler()
     }
 
     fseek(file, 0, SEEK_END);
-    request->body.imageRequest.image.imageSize = ftell (file);
+    int img_size = ftell(file);
+    request->body.imageRequest.image.image.imageSize = img_size;
     fseek (file, 0, SEEK_SET);
         
-    realloc(request, sizeof(Request) + request->body.imageRequest.image.imageSize);
+    realloc(request, sizeof(Request) + img_size);
  
-    fread(request->body.imageRequest.image.image, 1, request->body.imageRequest.image.imageSize, file);
+    fread(&(request->body.imageRequest.image.image), 1, img_size, file);
         
     fclose (file);
 
@@ -288,7 +289,7 @@ void GET_IMAGE_BY_MAIL_handler()
 
     FILE *file = fopen("temp_image", "w");
 
-    int results = fputs(response->data, file);
+    int results = fputs(response->data.image.image.image.image, file);
     if (results == EOF) 
     {
         printf("ERROR SAVING IMAGE.\n");

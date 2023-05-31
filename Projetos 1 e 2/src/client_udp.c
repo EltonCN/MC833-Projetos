@@ -39,6 +39,15 @@ void openSocket()
 
 }
 
+int maxNumber(int a, int b)
+{
+    if(a>b)
+    {
+        return a;
+    }
+    return b;
+}
+
 // Public library functions (documentation in header) ---------------------------------
 
 Response* sendAndReceive(Request *request)
@@ -85,7 +94,7 @@ Response* sendAndReceive(Request *request)
     //Get Response----------------------------------------------------------------------------
 
     int maxSize = MAX_REGISTRY_PER_PACKAGE*sizeof(Registry);
-    maxSize = max(maxSize, MAX_IMAGE_SIZE_PER_PACKAGE*sizeof(char));
+    maxSize = maxNumber(maxSize, MAX_IMAGE_SIZE_PER_PACKAGE*sizeof(char));
     
     int size = sizeof(Response)+maxSize;
 

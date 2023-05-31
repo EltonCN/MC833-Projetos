@@ -2,6 +2,14 @@
 
 #include "common_def.h"
 
+/// @brief Get a fragment of a image
+/// @param nPackages The number of packages/fragments to break the image into
+/// @param imageSize The size of the full image
+/// @param maxSizePerPackage The maximum size for a package
+/// @param image The image
+/// @param mail The user mail
+/// @param packageIndex The index of the fragment to get
+/// @return The image fragment
 ImageFrag* getImageFrag(int nPackages, int imageSize, int maxSizePerPackage, char* image, char* mail, int packageIndex)
 {
     int size = maxSizePerPackage;
@@ -29,6 +37,9 @@ ImageFrag* getImageFrag(int nPackages, int imageSize, int maxSizePerPackage, cha
     return frag;
 }
 
+/// @brief Restoure the image from fragments
+/// @param frags Vector of fragments pointers
+/// @return Reconstructed image
 RegistryImage* restoreImage(ImageFrag** frags)
 {
     RegistryImage* image = malloc(sizeof(RegistryImage)+(frags[0]->imageSize*sizeof(char)));

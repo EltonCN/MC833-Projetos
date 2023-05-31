@@ -229,6 +229,7 @@ void REMOVE_BY_MAIL_handler()
     free(response);
 }
 
+/// @brief Handler fro sending a image
 void SEND_IMAGE_handler()
 {
     Request *request = malloc(sizeof(Request));
@@ -269,6 +270,7 @@ void SEND_IMAGE_handler()
 
 }
 
+/// @brief Handler for getting a registry image
 void GET_IMAGE_BY_MAIL_handler()
 {
     Request request;

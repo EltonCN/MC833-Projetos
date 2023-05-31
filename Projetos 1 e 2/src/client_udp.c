@@ -12,6 +12,7 @@
 #include "responses_def.h"
 
 #define MAX_IMAGE_SIZE_PER_PACKAGE 500.0
+#define MAX_REGISTRY_PER_PACKAGE 10
 
 #define PORT 54321
 char* SERVER_IP = "127.0.0.1";
@@ -43,73 +44,104 @@ void openSocket()
 Response* sendAndReceive(Request *request)
 {
     openSocket();
-    
+
+    //Send request-----------------------------------------------------------------   
     if(request->type == SEND_IMAGE)
     {
+        //Image -> fragment and send
+
+        //Compute nPackage
         int imageSize = request->body.imageRequest.image.image.imageSize;
         int nPackage = ceil(((float) imageSize)/MAX_IMAGE_SIZE_PER_PACKAGE);
 
+        //Basic request
         Request* fragRequest = malloc(sizeof(Request)); 
         request->body.imageRequest.isFragIfOne = 1;
         request->type = SEND_IMAGE;
 
         for(int i = 0; i<nPackage; i++)
         {
-
+            //Create fragment
             ImageFrag* frag = getImageFrag(nPackage, imageSize, MAX_IMAGE_SIZE_PER_PACKAGE, 
                             &(request->body.imageRequest.image.image), 
                             &(request->body.imageRequest.image.image.mail),
                             i);
             
+            //Copy fragment to request
             realloc(request, sizeof(Request)+(frag->size*sizeof(char)));
             memcpy(&(request->body.imageRequest.image.frag), frag, sizeof(ImageFrag)+(frag->size*sizeof(char)));
             free(frag);
 
+            //Send
             send(sockfd, (void *) fragRequest, sizeof(Request)+(frag->size*sizeof(char)), 0);
         }
     }
     else
     {
+        //Normal request send
         send(sockfd, (void *) request, sizeof(Request), 0);
     }
 
-    Response *response = malloc(sizeof(Response));
-    int return_code = recv(sockfd, (void *) response, sizeof(Response), MSG_WAITALL);
+    //Get Response----------------------------------------------------------------------------
 
-    if(return_code != sizeof(Response))
+    int maxSize = MAX_REGISTRY_PER_PACKAGE*sizeof(Registry);
+    maxSize = max(maxSize, MAX_IMAGE_SIZE_PER_PACKAGE*sizeof(char));
+    
+    int size = sizeof(Response)+maxSize;
+
+    //Receive response
+    Response *response = malloc(size);
+    int return_code = recv(sockfd, (void *) response, size, MSG_WAITALL);
+
+    //Check for error
+    if(return_code < sizeof(Response))
     {
         printf("ERROR RECEIVING RESPONSE. OPERATION MAY HAVE BEEN PERFORMED.\n");
 
-        Response *response = malloc(sizeof(Response));
         response->code = 0;
         return response;
     }
 
-    if(response->type == LIST_BY_COURSE ||
-        response->type == LIST_BY_SKILL ||
-        response->type == LIST_BY_YEAR ||
-        response->type == LIST_ALL)
-    {
-        int nRegistry = response->data.registries.nRegistry;
-
-        response = realloc(response, sizeof(Response)+(nRegistry*sizeof(Registry)));
-        int return_code = recv(sockfd, (void *) response->data.registries.registries, (nRegistry*sizeof(Registry)), MSG_WAITALL);
-
-        if(return_code != nRegistry*sizeof(Registry))
-        {
-            printf("ERROR RECEIVING RESPONSE. OPERATION MAY HAVE BEEN PERFORMED.\n");
-
-            Response *response = malloc(sizeof(Response));
-            response->code = 0;
-            return response;
-        }
-    }
-
+    //Receive image if image
     if(response->type == GET_IMAGE_BY_MAIL)
     {
+        //Receive image fragments and reconstruct image
         int nPackage = response->data.image.image.frag.nPackages;
 
-        // TODO RECEIVE IMAGE FRAGS
+        ImageFrag** frags = malloc(sizeof(ImageFrag*)*nPackage);
+        frags[0] = &(response->data.image.image.frag);
+
+        Response** responses = malloc(sizeof(Response*)*nPackage);
+        responses[0] = response;
+
+        for(int i = 1; i<nPackage; i++)
+        {
+            response = malloc(size);
+            return_code = recv(sockfd, (void *) response, size, MSG_WAITALL);
+
+            frags[i] = &(response->data.image.image.frag);
+            responses[i] = response;
+        }
+
+        //Reconstruc image
+        RegistryImage *img = restoreImage(frags);
+        size = sizeof(RegistryImage)+(frags[0]->imageSize*sizeof(char));
+        
+        //Create response and copy image
+        response = malloc(sizeof(Response)+size);
+        response->code = 1;
+        response->type = GET_IMAGE_BY_MAIL;
+        response->data.image.isFragIfOne = 0;
+        memcpy(&(response->data.image.image.image), img, size);
+
+        //Free every non-final-response memory
+        free(img);
+        for(int i = 0; i<nPackage; i++)
+        {
+            free(responses[i]);
+            free(frags);
+            free(responses);
+        }
     }
 
     return response;

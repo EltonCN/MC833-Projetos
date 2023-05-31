@@ -1,6 +1,9 @@
 #ifndef COMMON_DEF
 #define COMMON_DEF
 
+#define MAX_IMAGE_SIZE_PER_PACKAGE 500.0
+#define MAX_REGISTRY_PER_PACKAGE 10
+
 /** @brief Request operation types.
 * 
 *   REGISTER: Creates new registry. Doesn't returns data.

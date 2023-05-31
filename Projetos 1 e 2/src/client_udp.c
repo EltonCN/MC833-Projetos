@@ -11,8 +11,7 @@
 #include "requests_def.h"
 #include "responses_def.h"
 
-#define MAX_IMAGE_SIZE_PER_PACKAGE 500.0
-#define MAX_REGISTRY_PER_PACKAGE 10
+
 
 #define PORT 54321
 char* SERVER_IP = "127.0.0.1";

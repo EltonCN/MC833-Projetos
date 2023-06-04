@@ -7,6 +7,7 @@
 #include "server.h"
 #include "requests_def.h"
 #include "responses_def.h"
+#include "common_def.h"
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE 1
@@ -36,7 +37,7 @@ MYSQL* connectDB()
     // If they already exist, connect to them.
     if (mysql_query(conn, "CREATE DATABASE IF NOT EXISTS ServerDB") ||
     mysql_query(conn, "USE ServerDB") ||
-    mysql_query(conn, "CREATE TABLE IF NOT EXISTS Photos(Mail VARCHAR(25), ImageSize INT, Size INT, Index INT, Photo VARCHAR(MAX), PRIMARY KEY (Mail))") ||
+    mysql_query(conn, "CREATE TABLE IF NOT EXISTS Photos(Mail VARCHAR(25), Size INT, MaxSizePerPackage INT, NPackages INT, PackageIndex INT, imageSize INT, ImageFrag VARCHAR() PRIMARY KEY (Mail, PackageIndex))") ||
     mysql_query(conn, "CREATE TABLE IF NOT EXISTS Users(Mail VARCHAR(25), name VARCHAR(25), surname VARCHAR(50), city VARCHAR(25), course VARCHAR(50), graduationYear INT, skills VARCHAR(100), PRIMARY KEY (Mail))"))
     {
         fprintf(stderr, "ERROR IN CONNECT DATABASE - %s\n", mysql_error(conn));
@@ -90,12 +91,15 @@ Response* INSERT_photo(Request request)
     char *query;
 
     response->code = 1;
-    response->data.registries.nRegistry = 0;
 
-    asprintf(&query, "INSERT INTO Photos(Mail, Index, Photo) VALUES ('%s', '%s', '%s')",
-        request.body.registerRequest.registry.mail,
-        request.body.registerRequest.registry.mail,
-        request.body.registerRequest.registry.name);
+    asprintf(&query, "INSERT INTO Photos(Mail, Size, MaxSizePerPackage, NPackages, PackageIndex, imageSize, ImageFrag) VALUES ('%s', %d, %d, %d, %d, %d, '%s')",
+        request.body.imageRequest.image.frag.mail,
+        request.body.imageRequest.image.frag.size,
+        request.body.imageRequest.image.frag.maxSizePerPackage,
+        request.body.imageRequest.image.frag.nPackages,
+        request.body.imageRequest.image.frag.packageIndex,
+        request.body.imageRequest.image.frag.imageSize,
+        request.body.imageRequest.image.frag.imageFrag);
 
     printf("Execute query: %s\n", query);
 
@@ -133,68 +137,70 @@ void REMOVER_photo(char mail[25])
 }
 
 /// @brief Get a photo to the database
-ImageData* GET_photo(char mail[25])
+FragList* GET_photo(char mail[25])
 {
     MYSQL *conn = connectDB();
-    ImageData *imageData = malloc(sizeof(ImageData));
+    FragList *fragList = malloc(sizeof(FragList));
     char *query;
 
-    imageData->code = 0;
+    fragList->code = 0;
+    fragList->size = 0;
 
-    asprintf(&query, "SELECT Photo, ImageSize, Size FROM Photos WHERE Mail = '%s' ORDER BY Index ASC", mail);
+    asprintf(&query, "SELECT Mail, Size, MaxSizePerPackage, NPackages, PackageIndex, imageSize, ImageFrag FROM Photos WHERE Mail = '%s' ORDER BY PackageIndex ASC", mail);
 
     printf("Execute query: %s\n", query);
 
     if (mysql_query(conn, query))
     {
         fprintf(stderr, "ERROR IN SELECT PHOTO - %s\n", mysql_error(conn));
-        imageData->code = 0;
+        fragList->code = 0;
     }
     else
     {
         MYSQL_RES *result = mysql_store_result(conn);
 
-        imageData->code = 1;
-        imageData->imageSize = 0;
-        imageData->size = 0;
+        fragList->code = 1;
+        fragList->size = 0;
 
         if (result != NULL)
         {
             MYSQL_ROW row;
-            int imageSize;
             int index = 0;
             int rows_size = mysql_num_rows(result);
 
-            ImageData* imageData2  = malloc(sizeof(ImageData) + MAX_IMAGE_SIZE_PER_PACKAGE*sizeof(char)*rows_size);
+            FragList* fragList2  = malloc(sizeof(FragList) + MAX_IMAGE_SIZE_PER_PACKAGE*sizeof(char)*rows_size);
 
-            imageData2->code = 1;
-            imageData2->size = rows_size;
+            fragList2->code = 1;
+            fragList2->size = rows_size;
 
             while ((row = mysql_fetch_row(result)))
             {
-                strcpy(imageData2->data[index], row[0]);
-                imageData2->sizeData[index] = atoi(row[2]);
-                imageSize = atoi(row[1]);
+                fragList2->frags[index].size = atoi(row[1]);
+                fragList2->frags[index].maxSizePerPackage = atoi(row[2]);
+                fragList2->frags[index].nPackages = atoi(row[3]);
+                fragList2->frags[index].packageIndex = atoi(row[4]);
+                fragList2->frags[index].imageSize = atoi(row[5]);
 
+                strcpy(fragList2->frags[index].mail, row[0]);
+                strcpy(fragList2->frags[index].imageFrag, row[6]);
+                
                 index += 1;
             }
-
-            imageData2->imageSize = imageSize;
 
             mysql_free_result(result);
 
             mysql_close(conn);
-            free(imageData);
+            free(fragList);
             free(query);
 
-            return imageData2;
+            return fragList2;
         }
     }
 
     mysql_close(conn);
     free(query);
 
-    return imageData;
+    return fragList;
 }
 
 /// @brief Remove users to the database

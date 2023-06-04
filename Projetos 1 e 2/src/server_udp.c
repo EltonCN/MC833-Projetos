@@ -25,35 +25,36 @@ void processRequest(Request request, int sockfd, SA *pcliaddr, socklen_t clilen)
 
     // Process the request in the database
     if (request.type == GET_IMAGE_BY_MAIL) {
-        ImageData* imageData = GET_photo(request.body.byMailRequest.mail);
-        response->code = imageData->code;
-        response->data.image.isFragIfOne = 1;
+        FragList* fragList = GET_photo(request.body.byMailRequest.mail);
+        response->code = fragList->code;
 
-        printf("Response - code: %d, image size: %d\n", response->code, imageData->size);
+        printf("Response - code: %d, image size: %d\n", response->code, fragList->size);
 
-        for (int i = 0; i < imageData->size; i++) {
-            ImageFrag* frag = malloc(sizeof(ImageFrag)+(sizeof(imageData->data[i])*sizeof(char)));
-
-            frag->size = sizeof(imageData->data[i]);
-            frag->nPackages = imageData->size;
-            frag->maxSizePerPackage = MAX_IMAGE_SIZE_PER_PACKAGE;
-            frag->packageIndex = i;
-            frag->imageSize = imageData->imageSize;
-
-            strcpy(frag->mail, request.body.byMailRequest.mail);
-            memcpy(frag->imageFrag, &(imageData->data[i]), sizeof(imageData->data[i]));
-
-            //Copy fragment to request
-            realloc(response, sizeof(Response)+(frag->size*sizeof(char)));
-            memcpy(&(response->data.image.image.frag), frag, sizeof(ImageFrag)+(frag->size*sizeof(char)));
-            free(frag);
-
-            //Send
-            sendto (sockfd, (void *) response, sizeof(Response) + sizeof(imageData->data[i])*sizeof(char), 0, pcliaddr, clilen);
+        if (response->code == 0 || response->size == 0) {
+            response->data.image.isFragIfOne = 0;
+            
+            sendto (sockfd, (void *) response, sizeof(Response), 0, pcliaddr, clilen);
         }
+        else {
+            response->data.image.isFragIfOne = 1;
+
+            for (int i = 0; i < fragList->size; i++) {
+                //Copy fragment to request
+                realloc(response, sizeof(Response)+(fragList->frags[i]->size*sizeof(char)));
+                memcpy(&(response->data.image.image.frag), fragList->frags[i], sizeof(ImageFrag)+(fragList->frags[i]->size*sizeof(char)));
+
+                //Send
+                sendto (sockfd, (void *) response, sizeof(Response) + fragList->frags[i]->size*sizeof(char), 0, pcliaddr, clilen);
+            }
+        }
+
+        free(fragList);
+        
         return;
     }
-    if (request.type == REGISTER)
+    else if (request.type == SEND_IMAGE)
+        response = INSERT_photo(request);
+    else if (request.type == REGISTER)
         response = REGISTER_handler(request);
     else if (request.type == REMOVE_BY_MAIL)
         response = REMOVE_BY_MAIL_handler(request);

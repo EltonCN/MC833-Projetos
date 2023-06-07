@@ -260,7 +260,7 @@ void SEND_IMAGE_handler()
     request->body.imageRequest.image.image.imageSize = img_size;
     fseek (file, 0, SEEK_SET);
         
-    realloc(request, sizeof(Request) + img_size);
+    request = realloc(request, sizeof(Request) + img_size);
  
     fread(&(request->body.imageRequest.image.image), 1, img_size, file);
         

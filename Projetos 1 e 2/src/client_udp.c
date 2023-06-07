@@ -76,7 +76,7 @@ Response* sendAndReceive(Request *request)
                             i);
             
             //Copy fragment to request
-            realloc(request, sizeof(Request)+(frag->size*sizeof(char)));
+            request = realloc(request, sizeof(Request)+(frag->size*sizeof(char)));
             memcpy(&(request->body.imageRequest.image.frag), frag, sizeof(ImageFrag)+(frag->size*sizeof(char)));
             free(frag);
 

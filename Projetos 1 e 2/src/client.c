@@ -235,6 +235,10 @@ void SEND_IMAGE_handler()
     Request *request = malloc(sizeof(Request));
     request->type = SEND_IMAGE;
 
+    printf("mail (max 24 char): ");
+    scanf("%s", &request->body.imageRequest.image.image.mail);
+    printf("\n");
+
     char image_path[200];
 
     printf("Enter image path: ");
@@ -261,6 +265,8 @@ void SEND_IMAGE_handler()
     fread(&(request->body.imageRequest.image.image), 1, img_size, file);
         
     fclose (file);
+
+    printf("Image read sucefully!\n");
 
     Response* response = sendAndReceive(&request);
     

@@ -37,7 +37,7 @@ MYSQL* connectDB()
     // If they already exist, connect to them.
     if (mysql_query(conn, "CREATE DATABASE IF NOT EXISTS ServerDB") ||
     mysql_query(conn, "USE ServerDB") ||
-    mysql_query(conn, "CREATE TABLE IF NOT EXISTS Photos(Mail VARCHAR(25), Size INT, MaxSizePerPackage INT, NPackages INT, PackageIndex INT, imageSize INT, ImageFrag VARCHAR() PRIMARY KEY (Mail, PackageIndex))") ||
+    mysql_query(conn, "CREATE TABLE IF NOT EXISTS Photos(Mail VARCHAR(25), Size INT, MaxSizePerPackage INT, NPackages INT, PackageIndex INT, imageSize INT, ImageFrag VARBINARY(500), CONSTRAINT PK_Photo UNIQUE (Mail, PackageIndex))") ||
     mysql_query(conn, "CREATE TABLE IF NOT EXISTS Users(Mail VARCHAR(25), name VARCHAR(25), surname VARCHAR(50), city VARCHAR(25), course VARCHAR(50), graduationYear INT, skills VARCHAR(100), PRIMARY KEY (Mail))"))
     {
         fprintf(stderr, "ERROR IN CONNECT DATABASE - %s\n", mysql_error(conn));
@@ -92,7 +92,7 @@ Response* INSERT_photo(Request request)
 
     response->code = 1;
 
-    asprintf(&query, "INSERT INTO Photos(Mail, Size, MaxSizePerPackage, NPackages, PackageIndex, imageSize, ImageFrag) VALUES ('%s', %d, %d, %d, %d, %d, '%s')",
+    asprintf(&query, "INSERT INTO Photos(Mail, Size, MaxSizePerPackage, NPackages, PackageIndex, imageSize, ImageFrag) VALUES ('%s', %d, %d, %d, %d, %d, \"%s\")",
         request.body.imageRequest.image.frag.mail,
         request.body.imageRequest.image.frag.size,
         request.body.imageRequest.image.frag.maxSizePerPackage,
@@ -266,7 +266,6 @@ Response* LIST_USER_handler(char where_cause[70])
             printf("%d rows.\n", rows_size);
 
             Response* response2  = malloc(sizeof(Response) + (rows_size*sizeof(Registry)));
-            Registry registry[rows_size];
 
             response2->code = 1;
 
@@ -279,18 +278,16 @@ Response* LIST_USER_handler(char where_cause[70])
             {
                 printf("Row %d: %s, %s, %s, %s, %s, %s, %s\n", index, row[0], row[1], row[2], row[3], row[4], row[5], row[6]);
 
-                strcpy(registry[index].mail, row[0]);
-                strcpy(registry[index].name, row[1]);
-                strcpy(registry[index].surname, row[2]);
-                strcpy(registry[index].city, row[3]);
-                strcpy(registry[index].course, row[4]);
-                registry[index].graduationYear = atoi(row[5]);
-                strcpy(registry[index].skills, row[6]);
+                strcpy(response2->data.registries.registries[index].mail, row[0]);
+                strcpy(response2->data.registries.registries[index].name, row[1]);
+                strcpy(response2->data.registries.registries[index].surname, row[2]);
+                strcpy(response2->data.registries.registries[index].city, row[3]);
+                strcpy(response2->data.registries.registries[index].course, row[4]);
+                response2->data.registries.registries[index].graduationYear = atoi(row[5]);
+                strcpy(response2->data.registries.registries[index].skills, row[6]);
 
                 index += 1;
             }
-
-            memcpy(response2->data.registries.registries, registry, sizeof(registry));
 
             mysql_free_result(result);
 

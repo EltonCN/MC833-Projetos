@@ -259,16 +259,16 @@ void SEND_IMAGE_handler()
     int img_size = ftell(file);
     request->body.imageRequest.image.image.imageSize = img_size;
     fseek (file, 0, SEEK_SET);
-        
+
     request = realloc(request, sizeof(Request) + img_size);
  
-    fread(&(request->body.imageRequest.image.image), 1, img_size, file);
-        
+    fread(&(request->body.imageRequest.image.image.image), 1, img_size, file);
+    
     fclose (file);
 
     printf("Image read sucefully!\n");
 
-    Response* response = sendAndReceive(&request);
+    Response* response = sendAndReceive(request);
     
     printDefaultResponse(response);
     free(request);

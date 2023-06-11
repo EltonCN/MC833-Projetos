@@ -23,8 +23,8 @@ ImageFrag* getImageFrag(int nPackages, int imageSize, int maxSizePerPackage, cha
 
     int start = (packageIndex-1)*maxSizePerPackage;
 
-    ImageFrag* frag = malloc(sizeof(ImageFrag)+(size*sizeof(char)));
-
+    ImageFrag* frag = malloc(sizeof(ImageFrag)+(size));
+    
     frag->size = size;
     frag->nPackages = nPackages;
     frag->maxSizePerPackage = maxSizePerPackage;
@@ -32,7 +32,7 @@ ImageFrag* getImageFrag(int nPackages, int imageSize, int maxSizePerPackage, cha
     frag->imageSize = imageSize;
 
     strcpy(frag->mail, mail);
-    memcpy(frag->imageFrag, image[start], size);
+    memcpy(frag->imageFrag, &image[start], size);
 
     return frag;
 }

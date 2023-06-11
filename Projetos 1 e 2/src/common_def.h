@@ -75,14 +75,14 @@ union ImageOrFrag
 
 typedef union ImageOrFrag ImageOrFrag; 
 
-union FragList
+struct FragList
 {
     int size;
     int code;
     ImageFrag frags[];
 };
 
-typedef union FragList FragList; 
+typedef struct FragList FragList; 
 
 struct Image
 {

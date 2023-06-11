@@ -64,8 +64,8 @@ Response* sendAndReceive(Request *request)
 
         //Basic request
         Request* fragRequest = malloc(sizeof(Request)); 
-        request->body.imageRequest.isFragIfOne = 1;
-        request->type = SEND_IMAGE;
+        fragRequest->body.imageRequest.isFragIfOne = 1;
+        fragRequest->type = SEND_IMAGE;
 
         for(int i = 0; i<nPackage; i++)
         {
@@ -74,15 +74,18 @@ Response* sendAndReceive(Request *request)
                             &(request->body.imageRequest.image.image), 
                             &(request->body.imageRequest.image.image.mail),
                             i);
-            
-            //Copy fragment to request
-            request = realloc(request, sizeof(Request)+(frag->size*sizeof(char)));
-            memcpy(&(request->body.imageRequest.image.frag), frag, sizeof(ImageFrag)+(frag->size*sizeof(char)));
-            free(frag);
 
+            //Copy fragment to request
+            fragRequest = realloc(fragRequest, sizeof(Request)+(frag->size));
+            memcpy(&(fragRequest->body.imageRequest.image.frag), frag, sizeof(ImageFrag)+(frag->size));
+            
             //Send
-            send(sockfd, (void *) fragRequest, sizeof(Request)+(frag->size*sizeof(char)), 0);
+            send(sockfd, (void *) fragRequest, sizeof(Request)+(frag->size), 0);
+
+            free(frag);
         }
+        
+        free(fragRequest);
     }
     else
     {

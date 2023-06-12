@@ -49,11 +49,11 @@ void processRequest(Request request, int sockfd, SA *pcliaddr, socklen_t clilen)
 
             for (int i = 0; i < fragList->size; i++) {
                 //Copy fragment to request
-                response = realloc(response, sizeof(Response)+(fragList->frags[i].size*sizeof(char)));
-                memcpy(&(response->data.image.image.frag), &(fragList->frags[i]), sizeof(ImageFrag)+(fragList->frags[i].size*sizeof(char)));
+                response = realloc(response, sizeof(Response)+(fragList->frags[i].size));
+                memcpy(&(response->data.image.image.frag), &(fragList->frags[i]), sizeof(ImageFrag)+(fragList->frags[i].size)));
 
                 //Send
-                sendto (sockfd, (void *) response, sizeof(Response) + fragList->frags[i].size*sizeof(char), 0, pcliaddr, clilen);
+                sendto (sockfd, (void *) response, sizeof(Response) + fragList->frags[i].size, 0, pcliaddr, clilen);
             }
         }
 
@@ -83,7 +83,7 @@ void processRequest(Request request, int sockfd, SA *pcliaddr, socklen_t clilen)
         response = GET_BY_MAIL_handler(request);
 
     int maxSize = MAX_REGISTRY_PER_PACKAGE*sizeof(Registry);
-    maxSize = maxNumber(maxSize, MAX_IMAGE_SIZE_PER_PACKAGE*sizeof(char));
+    maxSize = maxNumber(maxSize, MAX_IMAGE_SIZE_PER_PACKAGE);
     
     int size = sizeof(Response)+maxSize;
 

@@ -187,7 +187,7 @@ FragList* GET_photo(char mail[25])
             int index = 0;
             int rows_size = mysql_num_rows(result);
 
-            FragList* fragList2  = malloc(sizeof(FragList) + MAX_IMAGE_SIZE_PER_PACKAGE*sizeof(char)*rows_size);
+            FragList* fragList2  = malloc(sizeof(FragList) + MAX_IMAGE_SIZE_PER_PACKAGE*rows_size);
 
             fragList2->code = 1;
             fragList2->size = rows_size;

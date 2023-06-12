@@ -96,7 +96,7 @@ Response* sendAndReceive(Request *request)
     //Get Response----------------------------------------------------------------------------
 
     int maxSize = MAX_REGISTRY_PER_PACKAGE*sizeof(Registry);
-    maxSize = maxNumber(maxSize, MAX_IMAGE_SIZE_PER_PACKAGE*sizeof(char));
+    maxSize = maxNumber(maxSize, MAX_IMAGE_SIZE_PER_PACKAGE);
     
     int size = sizeof(Response)+maxSize;
 
@@ -151,7 +151,6 @@ Response* sendAndReceive(Request *request)
         for(int i = 0; i<nPackage; i++)
         {
             free(responses[i]);
-            free(frags[i]);
         }
         free(img);
         free(frags);

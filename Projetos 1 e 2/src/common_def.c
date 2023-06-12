@@ -42,7 +42,7 @@ ImageFrag* getImageFrag(int nPackages, int imageSize, int maxSizePerPackage, cha
 /// @return Reconstructed image
 RegistryImage* restoreImage(ImageFrag** frags)
 {
-    RegistryImage* image = malloc(sizeof(RegistryImage)+(frags[0]->imageSize*sizeof(char)));
+    RegistryImage* image = malloc(sizeof(RegistryImage)+(frags[0]->imageSize));
 
     image->imageSize = frags[0]->imageSize;
     strcpy(image->mail, frags[0]->mail);

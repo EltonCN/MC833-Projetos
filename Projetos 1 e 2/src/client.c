@@ -297,6 +297,8 @@ void GET_IMAGE_BY_MAIL_handler()
 
     FILE *file = fopen("temp_image.png", "wb");
 
+    printf("IMAGE SIZE - CLIENT SAVE: %d\n", response->data.image.image.image.imageSize);
+
     int results = fwrite(response->data.image.image.image.image, response->data.image.image.image.imageSize, 1, file);
     if (results <= 0) 
     {

@@ -134,6 +134,8 @@ Response* sendAndReceive(Request *request)
             responses[i] = response;
         }
 
+        printf("IMAGE SIZE - RECEIVE FRAGMENTE: %d\n", frags[0]->imageSize);
+
         //Reconstruc image
         RegistryImage *img = restoreImage(frags);
         size = sizeof(RegistryImage)+(frags[0]->imageSize);
@@ -154,6 +156,8 @@ Response* sendAndReceive(Request *request)
         free(img);
         free(frags);
         free(responses);
+
+        printf("IMAGE SIZE - RECEIVE END: %d\n", response->data.image.image.image.imageSize);
     }
 
     return response;

@@ -21,7 +21,7 @@ ImageFrag* getImageFrag(int nPackages, int imageSize, int maxSizePerPackage, cha
         size = imageSize-totalSize;
     }
 
-    int start = (packageIndex-1)*maxSizePerPackage;
+    int start = packageIndex*maxSizePerPackage;
 
     ImageFrag* frag = malloc(sizeof(ImageFrag)+(size));
     

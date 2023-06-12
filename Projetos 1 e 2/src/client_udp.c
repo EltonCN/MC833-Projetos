@@ -71,7 +71,7 @@ Response* sendAndReceive(Request *request)
         {
             //Create fragment
             ImageFrag* frag = getImageFrag(nPackage, imageSize, MAX_IMAGE_SIZE_PER_PACKAGE, 
-                            &(request->body.imageRequest.image.image), 
+                            &(request->body.imageRequest.image.image.image), 
                             &(request->body.imageRequest.image.image.mail),
                             i);
 
@@ -136,7 +136,7 @@ Response* sendAndReceive(Request *request)
 
         printf("IMAGE SIZE - RECEIVE FRAGMENTE: %d\n", frags[0]->imageSize);
 
-        //Reconstruc image
+        //Reconstruct image
         RegistryImage *img = restoreImage(frags);
         size = sizeof(RegistryImage)+(frags[0]->imageSize);
         

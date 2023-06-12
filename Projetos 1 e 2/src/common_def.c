@@ -50,16 +50,7 @@ RegistryImage* restoreImage(ImageFrag** frags)
     for(int i = 0; i<frags[0]->nPackages; i++)
     {
         int start = frags[i]->packageIndex*frags[0]->maxSizePerPackage;
-        
-        int size = frags[0]->maxSizePerPackage;
-        if(frags[i]->packageIndex >= frags[0]->nPackages-1)
-        {
-            int totalSize = (frags[0]->nPackages-1) * frags[0]->maxSizePerPackage;
-
-            size = frags[0]->imageSize-totalSize;
-        }
-
-        memcpy(&(image->image[start]), frags[i]->imageFrag, size);
+        memcpy(&(image->image[start]), frags[i]->imageFrag, frags[i]->size);
     }
 
     return image;

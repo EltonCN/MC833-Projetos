@@ -79,7 +79,7 @@ struct FragList
 {
     int size;
     int code;
-    ImageFrag frags[];
+    ImageFrag** frags;
 };
 
 typedef struct FragList FragList; 

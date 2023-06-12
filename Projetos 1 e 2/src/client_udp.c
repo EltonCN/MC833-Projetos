@@ -79,19 +79,33 @@ Response* sendAndReceive(Request *request)
             fragRequest = realloc(fragRequest, sizeof(Request)+(frag->size));
             memcpy(&(fragRequest->body.imageRequest.image.frag), frag, sizeof(ImageFrag)+(frag->size));
             
+
+            printf("REQUEST FRAG %d:\n", fragRequest->body.imageRequest.image.frag.packageIndex);
+            printf("-------------------------\n");
+
+            int n = fragRequest->body.imageRequest.image.frag.size/sizeof(char);
+
+            for(int j = 0; j<n; j++)
+            {
+                printf("%c", fragRequest->body.imageRequest.image.frag.imageFrag[j]);
+            }
+            printf("\n");
+            printf("-------------------------\n");
+
             //Send
             send(sockfd, (void *) fragRequest, sizeof(Request)+(frag->size), 0);
 
-            if(i == 0)
+            printf("FRAG %d:\n", frag->packageIndex);
+            printf("-------------------------\n");
+
+            n = frag->size/sizeof(char);
+
+            for(int j = 0; j<n; j++)
             {
-                printf("FRAGMENT 0 START");
-                for(int j = 0; j<50; j++)
-                {
-                    printf("%c", fragRequest->body.imageRequest.image.frag.imageFrag[j]);
-                }
-                printf("END\n");
-                exit(0);
+                printf("%c", frag->imageFrag[j]);
             }
+            printf("\n");
+            printf("-------------------------\n");
             
             free(frag);
         }
@@ -136,6 +150,21 @@ Response* sendAndReceive(Request *request)
         Response** responses = malloc(sizeof(Response*)*nPackage);
         responses[0] = response;
 
+        printf("PACKAGE INDEX: %d\n", frags[0]->packageIndex);
+
+        if(frags[0]->packageIndex == 0)
+        {
+            int n = frags[0]->size/sizeof(char);
+            printf("FRAGMENT 0 START");
+            printf("-------------------------\n");
+            for(int j = 0; j<n; j++)
+            {
+                printf("%c", frags[0]->imageFrag[j]);
+            }
+            printf("\n");
+            printf("-------------------------\n");
+        }
+
         for(int i = 1; i<nPackage; i++)
         {
             response = malloc(size);
@@ -144,26 +173,34 @@ Response* sendAndReceive(Request *request)
             frags[i] = &(response->data.image.image.frag);
             responses[i] = response;
 
-            if(frags[i]->packageIndex == 0)
+            printf("FRAG %d:\n", frags[i]->packageIndex);
+            printf("-------------------------\n");
+
+            int n = frags[i]->size/sizeof(char);
+
+            for(int j = 0; j<n; j++)
             {
-                printf("FRAGMENT 0 START");
-                for(int j = 0; j<50; j++)
-                {
-                    printf("%c", frags[i]->imageFrag[j]);
-                }
-                printf("END\n");
+                printf("%c", frags[i]->imageFrag[j]);
             }
+            printf("\n");
+            printf("-------------------------\n");
         }
 
-        
-    
+        printf("IMAGE SIZE - RECEIVED FRAGMENT: %d\n", frags[0]->imageSize);
 
-        printf("IMAGE SIZE - RECEIVE FRAGMENTE: %d\n", frags[0]->imageSize);
+
+        
 
         //Reconstruct image
         RegistryImage *img = restoreImage(frags);
         size = sizeof(RegistryImage)+(frags[0]->imageSize);
         
+        printf("IMAGE HEADER: ");
+        printf("%c", img->image[1]);
+        printf("%c", img->image[2]);
+        printf("%c", img->image[3]);
+        printf("\n");
+
         //Create response and copy image
         response = malloc(sizeof(Response)+size);
         response->code = 1;

@@ -37,7 +37,7 @@ MYSQL* connectDB()
     // If they already exist, connect to them.
     if (mysql_query(conn, "CREATE DATABASE IF NOT EXISTS ServerDB") ||
     mysql_query(conn, "USE ServerDB") ||
-    mysql_query(conn, "CREATE TABLE IF NOT EXISTS Photos(Mail VARCHAR(25), Size INT, MaxSizePerPackage INT, NPackages INT, PackageIndex INT, imageSize INT, ImageFrag VARBINARY(500), CONSTRAINT PK_Photo UNIQUE (Mail, PackageIndex))") ||
+    mysql_query(conn, "CREATE TABLE IF NOT EXISTS Photos(Mail VARCHAR(25), Size INT, MaxSizePerPackage INT, NPackages INT, PackageIndex INT, imageSize INT, ImageFrag BLOB, CONSTRAINT PK_Photo UNIQUE (Mail, PackageIndex))") ||
     mysql_query(conn, "CREATE TABLE IF NOT EXISTS Users(Mail VARCHAR(25), name VARCHAR(25), surname VARCHAR(50), city VARCHAR(25), course VARCHAR(50), graduationYear INT, skills VARCHAR(100), PRIMARY KEY (Mail))"))
     {
         fprintf(stderr, "ERROR IN CONNECT DATABASE - %s\n", mysql_error(conn));
@@ -90,23 +90,42 @@ Response* INSERT_photo(Request request)
     Response *response = malloc(sizeof(Response));
     char *query;
 
-    response->code = 1;
+    response->code = 0;
 
-    asprintf(&query, "INSERT INTO Photos(Mail, Size, MaxSizePerPackage, NPackages, PackageIndex, imageSize, ImageFrag) VALUES ('%s', %d, %d, %d, %d, %d, \"%s\")",
+    asprintf(&query, "INSERT INTO Photos(Mail, Size, MaxSizePerPackage, NPackages, PackageIndex, imageSize, ImageFrag) VALUES ('%s', %d, %d, %d, %d, %d, ?)",
         request.body.imageRequest.image.frag.mail,
         request.body.imageRequest.image.frag.size,
         request.body.imageRequest.image.frag.maxSizePerPackage,
         request.body.imageRequest.image.frag.nPackages,
         request.body.imageRequest.image.frag.packageIndex,
-        request.body.imageRequest.image.frag.imageSize,
-        request.body.imageRequest.image.frag.imageFrag);
+        request.body.imageRequest.image.frag.imageSize);
 
-    printf("Execute query: %s\n", query);
+    printf("Running query: %s\n", query);
 
-    if (mysql_query(conn, query))
-    {
-        fprintf(stderr, "ERROR IN INSERT PHOTO - %s\n", mysql_error(conn));
-        response->code = 0;
+    // Prepara a instrução SQL para inserir a imagem na tabela
+    MYSQL_STMT *stmt = mysql_stmt_init(conn);
+    if (mysql_stmt_prepare(stmt, query, strlen(query)) != 0) {
+        printf("Erro ao preparar a instrução SQL: %s\n", mysql_error(conn));
+    }
+    else {
+        // Associa os parâmetros da instrução SQL
+        MYSQL_BIND bind;
+        memset(&bind, 0, sizeof(bind));
+        bind.buffer_type = MYSQL_TYPE_BLOB;
+        bind.buffer = request.body.imageRequest.image.frag.imageFrag;
+        bind.buffer_length = strlen(request.body.imageRequest.image.frag.imageFrag);
+        if (mysql_stmt_bind_param(stmt, &bind) != 0) {
+            printf("Erro ao associar os parâmetros da instrução SQL: %s\n", mysql_error(conn));
+        }
+        else {
+            // Executa a instrução SQL para inserir a imagem
+            if (mysql_stmt_execute(stmt) != 0)
+                printf("Erro ao executar a instrução SQL: %s\n", mysql_error(conn));
+            else {
+                response->code = 1;
+                printf("Query executed successfully");
+            }
+        }
     }
 
     mysql_close(conn);

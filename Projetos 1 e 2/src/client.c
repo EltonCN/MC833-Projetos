@@ -295,7 +295,7 @@ void GET_IMAGE_BY_MAIL_handler()
         return;
     }
 
-    FILE *file = fopen("temp_image", "w");
+    FILE *file = fopen("temp_image.png", "w");
 
     int results = fputs(response->data.image.image.image.image, file);
     if (results == EOF) 
@@ -306,7 +306,7 @@ void GET_IMAGE_BY_MAIL_handler()
     }
     fclose(file);
 
-    char image_path[] = "temp_image";
+    char image_path[] = "temp_image.png";
     char command[210];
 
     snprintf(command, sizeof(command), "%s %s", "xdg-open", image_path);
@@ -355,6 +355,7 @@ void (*handlers[])() = {
                         GET_BY_MAIL_handler, 
                         REMOVE_BY_MAIL_handler,
                         SEND_IMAGE_handler,
+                        GET_IMAGE_BY_MAIL_handler,
                         changeServerIp_handler,
                         };
 
@@ -377,13 +378,14 @@ int main()
         printf("6 Get registry by mail\n");
         printf("7 Remove registry by mail\n");
         printf("8 Send profile image\n");
-        printf("9 Change server IP (default is local host)\n");
+        printf("9 Get profile image\n");
+        printf("10 Change server IP (default is local host)\n");
         printf("0 Exit\n");
         
         scanf("%d", &option);
 
         // Call the operation handler.
-        if(option <=8 && option >= 0)
+        if(option <=10 && option >= 0)
         {
             handlers[option]();
         }

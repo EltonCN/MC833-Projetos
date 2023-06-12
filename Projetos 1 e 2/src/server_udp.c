@@ -36,6 +36,7 @@ void processRequest(Request request, int sockfd, SA *pcliaddr, socklen_t clilen)
         FragList* fragList = GET_photo(request.body.byMailRequest.mail);
         response = malloc(sizeof(Response) + sizeof(Image));
         response->code = fragList->code;
+        response->type = request.type;
 
         printf("Response - code: %d, image size: %d\n", response->code, fragList->size);
 
@@ -50,7 +51,7 @@ void processRequest(Request request, int sockfd, SA *pcliaddr, socklen_t clilen)
             for (int i = 0; i < fragList->size; i++) {
                 //Copy fragment to request
                 response = realloc(response, sizeof(Response)+(fragList->frags[i].size));
-                memcpy(&(response->data.image.image.frag), &(fragList->frags[i]), sizeof(ImageFrag)+(fragList->frags[i].size)));
+                memcpy(&(response->data.image.image.frag), &(fragList->frags[i]), sizeof(ImageFrag)+(fragList->frags[i].size));
 
                 //Send
                 sendto (sockfd, (void *) response, sizeof(Response) + fragList->frags[i].size, 0, pcliaddr, clilen);

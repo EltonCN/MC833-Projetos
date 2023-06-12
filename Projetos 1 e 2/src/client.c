@@ -295,10 +295,10 @@ void GET_IMAGE_BY_MAIL_handler()
         return;
     }
 
-    FILE *file = fopen("temp_image.png", "w");
+    FILE *file = fopen("temp_image.png", "wb");
 
-    int results = fputs(response->data.image.image.image.image, file);
-    if (results == EOF) 
+    int results = fwrite(response->data.image.image.image.image, response->data.image.image.image.imageSize, 1, file);
+    if (results <= 0) 
     {
         printf("ERROR SAVING IMAGE.\n");
         free(response);

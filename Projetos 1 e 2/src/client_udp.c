@@ -136,7 +136,7 @@ Response* sendAndReceive(Request *request)
 
         //Reconstruc image
         RegistryImage *img = restoreImage(frags);
-        size = sizeof(RegistryImage)+(frags[0]->imageSize*sizeof(char));
+        size = sizeof(RegistryImage)+(frags[0]->imageSize);
         
         //Create response and copy image
         response = malloc(sizeof(Response)+size);
@@ -146,13 +146,14 @@ Response* sendAndReceive(Request *request)
         memcpy(&(response->data.image.image.image), img, size);
 
         //Free every non-final-response memory
-        free(img);
-        free(frags);
-        free(responses);
         for(int i = 0; i<nPackage; i++)
         {
             free(responses[i]);
+            free(frags[i]);
         }
+        free(img);
+        free(frags);
+        free(responses);
     }
 
     return response;

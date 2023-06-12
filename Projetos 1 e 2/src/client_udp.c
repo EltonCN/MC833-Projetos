@@ -82,6 +82,17 @@ Response* sendAndReceive(Request *request)
             //Send
             send(sockfd, (void *) fragRequest, sizeof(Request)+(frag->size), 0);
 
+            if(i == 0)
+            {
+                printf("FRAGMENT 0 START");
+                for(int j = 0; j<50; j++)
+                {
+                    printf("%c", fragRequest->body.imageRequest.image.frag.imageFrag[j]);
+                }
+                printf("END\n");
+                exit(0);
+            }
+            
             free(frag);
         }
         
@@ -132,7 +143,20 @@ Response* sendAndReceive(Request *request)
 
             frags[i] = &(response->data.image.image.frag);
             responses[i] = response;
+
+            if(frags[i]->packageIndex == 0)
+            {
+                printf("FRAGMENT 0 START");
+                for(int j = 0; j<50; j++)
+                {
+                    printf("%c", frags[i]->imageFrag[j]);
+                }
+                printf("END\n");
+            }
         }
+
+        
+    
 
         printf("IMAGE SIZE - RECEIVE FRAGMENTE: %d\n", frags[0]->imageSize);
 

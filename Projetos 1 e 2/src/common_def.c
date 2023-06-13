@@ -14,8 +14,6 @@ ImageFrag* getImageFrag(int nPackages, int imageSize, int maxSizePerPackage, cha
 {
     int size = maxSizePerPackage;
 
-    printf("IMAGE:\n%s\n\n", image);
-
     if(packageIndex >= nPackages-1)
     {
         int totalSize = (nPackages-1) * maxSizePerPackage;

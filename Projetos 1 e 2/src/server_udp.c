@@ -111,17 +111,18 @@ void dg_echo(int sockfd, SA *pcliaddr, socklen_t clilen)
 {
     int n;
     socklen_t len;
-    Request request;
+    Request* request = malloc(sizeof(Request)+MAX_IMAGE_SIZE_PER_PACKAGE);
     Response* response;
 
     for ( ; ; ) {
         len = clilen;
-        n = recvfrom (sockfd, (void *) &request, sizeof(Request) + MAX_IMAGE_SIZE_PER_PACKAGE, 0, pcliaddr, &len);
+        n = recvfrom (sockfd, (void *) request, sizeof(Request) + MAX_IMAGE_SIZE_PER_PACKAGE, 0, pcliaddr, &len);
 
         printf("RecvFrom - n: %d\n", n);
 
         if (n != -1) {
-            processRequest(&request, sockfd, pcliaddr, len);
+
+            processRequest(request, sockfd, pcliaddr, len);
         }
     }
 }

@@ -9,6 +9,12 @@ sudo apt install libmysqlclient-dev
 .\build.sh
 ```
 
+or 
+
+```bash
+.\build_udp.sh
+```
+
 
 # My SQL configuration
 - Install mysql server:

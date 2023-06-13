@@ -103,26 +103,6 @@ Response* INSERT_photo(Request* request)
 
     printf("Running query: %s\n", query);
 
-    if(request->body.imageRequest.image.frag.packageIndex == 0)
-    {
-        printf("FRAGMENT 0 START\n");
-        int n = request->body.imageRequest.image.frag.size/sizeof(char);
-        for(int j = 0; j<n; j++)
-        {
-            printf("%c", request->body.imageRequest.image.frag.imageFrag[j]);
-        }
-        printf("\nEND\n");
-    }
-
-    /*char image_path[200];
-    image_path[0] = NULL;
-    strcat(image_path, request.body.imageRequest.image.frag.mail);
-    strcat(image_path, request.body.imageRequest.image.frag.packageIndex);
-    
-    FILE * file = fopen(image_path, "wb");
-    fwrite(request.body.imageRequest.image.frag.imageFrag, request.body.imageRequest.image.frag.size, 1, file);
-    close(file);*/
-
     // Prepara a instrução SQL para inserir a imagem na tabela
     MYSQL_STMT *stmt = mysql_stmt_init(conn);
     if (mysql_stmt_prepare(stmt, query, strlen(query)) != 0) {
@@ -228,14 +208,6 @@ FragList* GET_photo(char mail[25])
                 strcpy(fragList2->frags[index]->mail, row[0]);
                 memcpy(&(fragList2->frags[index]->imageFrag), row[6], fragList2->frags[index]->size);
 
-                /*char image_path[200];
-                image_path[0] = NULL;
-                strcat(image_path, fragList2->frags[index].mail);
-                strcat(image_path, fragList2->frags[index].packageIndex);
-                
-                FILE * file = fopen(image_path, "wb");
-                fread(&(fragList2->frags[index].imageFrag), fragList2->frags[index].size, 1, file);
-                close(file);*/
                 
                 index += 1;
             }

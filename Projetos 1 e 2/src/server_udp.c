@@ -53,19 +53,6 @@ void processRequest(Request* request, int sockfd, SA *pcliaddr, socklen_t clilen
                 response = realloc(response, sizeof(Response)+(fragList->frags[i]->size));
                 memcpy(&(response->data.image.image.frag), fragList->frags[i], sizeof(ImageFrag)+(fragList->frags[i]->size));
 
-                if(fragList->frags[i]->packageIndex == 0)
-                {
-
-                    printf("CCCCCCCCCCCC:\n%s\n\n", fragList->frags[0]->imageFrag);
-                    printf("FRAGMENT 0 START");
-                    int n = fragList->frags[i]->size/sizeof(char);
-                    for(int j = 0; j<n; j++)
-                        {
-                        printf("%c", fragList->frags[i]->imageFrag[j]);
-                    }
-                    printf("END\n");
-                }
-
                 //Send
                 sendto (sockfd, (void *) response, sizeof(Response) + fragList->frags[i]->size, 0, pcliaddr, clilen);
             }
@@ -101,7 +88,7 @@ void processRequest(Request* request, int sockfd, SA *pcliaddr, socklen_t clilen
     
     int size = sizeof(Response)+maxSize;
 
-    printf("Response - code: %d, nRegistry: %d, mail: %s\n", response->code, response->data.registries.nRegistry, response->data.registries.registries[1].mail);
+    printf("Response - code: %d, nRegistry: %d", response->code, response->data.registries.nRegistry);
 
     response->type = request->type;
     sendto (sockfd, (void *) response, size, 0, pcliaddr, clilen);

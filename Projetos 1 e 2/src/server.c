@@ -124,7 +124,7 @@ Response* INSERT_photo(Request* request)
                 printf("Erro ao executar a instrução SQL: %s\n", mysql_error(conn));
             else {
                 response->code = 1;
-                printf("Query executed successfully");
+                printf("Query executed successfully\n");
             }
         }
     }

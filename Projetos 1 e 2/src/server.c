@@ -37,7 +37,7 @@ MYSQL* connectDB()
     // If they already exist, connect to them.
     if (mysql_query(conn, "CREATE DATABASE IF NOT EXISTS ServerDB") ||
     mysql_query(conn, "USE ServerDB") ||
-    mysql_query(conn, "CREATE TABLE IF NOT EXISTS Photos(Mail VARCHAR(25), Size INT, MaxSizePerPackage INT, NPackages INT, PackageIndex INT, imageSize INT, ImageFrag VARCHAR() PRIMARY KEY (Mail, PackageIndex))") ||
+    mysql_query(conn, "CREATE TABLE IF NOT EXISTS Photos(Mail VARCHAR(25), Size INT, MaxSizePerPackage INT, NPackages INT, PackageIndex INT, imageSize INT, ImageFrag BLOB, CONSTRAINT PK_Photo UNIQUE (Mail, PackageIndex))") ||
     mysql_query(conn, "CREATE TABLE IF NOT EXISTS Users(Mail VARCHAR(25), name VARCHAR(25), surname VARCHAR(50), city VARCHAR(25), course VARCHAR(50), graduationYear INT, skills VARCHAR(100), PRIMARY KEY (Mail))"))
     {
         fprintf(stderr, "ERROR IN CONNECT DATABASE - %s\n", mysql_error(conn));
@@ -51,7 +51,7 @@ MYSQL* connectDB()
 }
 
 /// @brief Add a new user to the database
-Response* REGISTER_handler(Request request)
+Response* REGISTER_handler(Request* request)
 {
     MYSQL *conn = connectDB();
     Response *response = malloc(sizeof(Response));
@@ -60,14 +60,15 @@ Response* REGISTER_handler(Request request)
     response->code = 1;
     response->data.registries.nRegistry = 0;
 
+
     asprintf(&query, "INSERT INTO Users(Mail, Name, Surname, City, Course, GraduationYear, Skills) VALUES ('%s', '%s', '%s', '%s', '%s', %d, '%s')",
-        request.body.registerRequest.registry.mail,
-        request.body.registerRequest.registry.name,
-        request.body.registerRequest.registry.surname,
-        request.body.registerRequest.registry.city,
-        request.body.registerRequest.registry.course,
-        request.body.registerRequest.registry.graduationYear,
-        request.body.registerRequest.registry.skills);
+        request->body.registerRequest.registry.mail,
+        request->body.registerRequest.registry.name,
+        request->body.registerRequest.registry.surname,
+        request->body.registerRequest.registry.city,
+        request->body.registerRequest.registry.course,
+        request->body.registerRequest.registry.graduationYear,
+        request->body.registerRequest.registry.skills);
 
     printf("Execute query: %s\n", query);
 
@@ -84,29 +85,48 @@ Response* REGISTER_handler(Request request)
 }
 
 /// @brief Add a new photo to the database
-Response* INSERT_photo(Request request)
+Response* INSERT_photo(Request* request)
 {
     MYSQL *conn = connectDB();
     Response *response = malloc(sizeof(Response));
     char *query;
 
-    response->code = 1;
+    response->code = 0;
 
-    asprintf(&query, "INSERT INTO Photos(Mail, Size, MaxSizePerPackage, NPackages, PackageIndex, imageSize, ImageFrag) VALUES ('%s', %d, %d, %d, %d, %d, '%s')",
-        request.body.imageRequest.image.frag.mail,
-        request.body.imageRequest.image.frag.size,
-        request.body.imageRequest.image.frag.maxSizePerPackage,
-        request.body.imageRequest.image.frag.nPackages,
-        request.body.imageRequest.image.frag.packageIndex,
-        request.body.imageRequest.image.frag.imageSize,
-        request.body.imageRequest.image.frag.imageFrag);
+    asprintf(&query, "INSERT INTO Photos(Mail, Size, MaxSizePerPackage, NPackages, PackageIndex, imageSize, ImageFrag) VALUES ('%s', %d, %d, %d, %d, %d, ?)",
+        request->body.imageRequest.image.frag.mail,
+        request->body.imageRequest.image.frag.size,
+        request->body.imageRequest.image.frag.maxSizePerPackage,
+        request->body.imageRequest.image.frag.nPackages,
+        request->body.imageRequest.image.frag.packageIndex,
+        request->body.imageRequest.image.frag.imageSize);
 
-    printf("Execute query: %s\n", query);
+    printf("Running query: %s\n", query);
 
-    if (mysql_query(conn, query))
-    {
-        fprintf(stderr, "ERROR IN INSERT PHOTO - %s\n", mysql_error(conn));
-        response->code = 0;
+    // Prepara a instrução SQL para inserir a imagem na tabela
+    MYSQL_STMT *stmt = mysql_stmt_init(conn);
+    if (mysql_stmt_prepare(stmt, query, strlen(query)) != 0) {
+        printf("Erro ao preparar a instrução SQL: %s\n", mysql_error(conn));
+    }
+    else {
+        // Associa os parâmetros da instrução SQL
+        MYSQL_BIND bind;
+        memset(&bind, 0, sizeof(bind));
+        bind.buffer_type = MYSQL_TYPE_BLOB;
+        bind.buffer = request->body.imageRequest.image.frag.imageFrag;
+        bind.buffer_length = request->body.imageRequest.image.frag.size;
+        if (mysql_stmt_bind_param(stmt, &bind) != 0) {
+            printf("Erro ao associar os parâmetros da instrução SQL: %s\n", mysql_error(conn));
+        }
+        else {
+            // Executa a instrução SQL para inserir a imagem
+            if (mysql_stmt_execute(stmt) != 0)
+                printf("Erro ao executar a instrução SQL: %s\n", mysql_error(conn));
+            else {
+                response->code = 1;
+                printf("Query executed successfully\n");
+            }
+        }
     }
 
     mysql_close(conn);
@@ -168,21 +188,26 @@ FragList* GET_photo(char mail[25])
             int index = 0;
             int rows_size = mysql_num_rows(result);
 
-            FragList* fragList2  = malloc(sizeof(FragList) + MAX_IMAGE_SIZE_PER_PACKAGE*sizeof(char)*rows_size);
+            FragList* fragList2  = malloc(sizeof(FragList));
+            fragList2->frags = malloc(sizeof(ImageFrag*)*rows_size);
 
             fragList2->code = 1;
             fragList2->size = rows_size;
 
+
             while ((row = mysql_fetch_row(result)))
             {
-                fragList2->frags[index].size = atoi(row[1]);
-                fragList2->frags[index].maxSizePerPackage = atoi(row[2]);
-                fragList2->frags[index].nPackages = atoi(row[3]);
-                fragList2->frags[index].packageIndex = atoi(row[4]);
-                fragList2->frags[index].imageSize = atoi(row[5]);
+                fragList2->frags[index] = malloc(sizeof(ImageFrag)+(sizeof(char)*atoi(row[1])));
+                
+                fragList2->frags[index]->size = atoi(row[1]);
+                fragList2->frags[index]->maxSizePerPackage = atoi(row[2]);
+                fragList2->frags[index]->nPackages = atoi(row[3]);
+                fragList2->frags[index]->packageIndex = atoi(row[4]);
+                fragList2->frags[index]->imageSize = atoi(row[5]);
 
-                strcpy(fragList2->frags[index].mail, row[0]);
-                strcpy(fragList2->frags[index].imageFrag, row[6]);
+                strcpy(fragList2->frags[index]->mail, row[0]);
+                memcpy(&(fragList2->frags[index]->imageFrag), row[6], fragList2->frags[index]->size);
+
                 
                 index += 1;
             }
@@ -266,7 +291,6 @@ Response* LIST_USER_handler(char where_cause[70])
             printf("%d rows.\n", rows_size);
 
             Response* response2  = malloc(sizeof(Response) + (rows_size*sizeof(Registry)));
-            Registry registry[rows_size];
 
             response2->code = 1;
 
@@ -279,18 +303,16 @@ Response* LIST_USER_handler(char where_cause[70])
             {
                 printf("Row %d: %s, %s, %s, %s, %s, %s, %s\n", index, row[0], row[1], row[2], row[3], row[4], row[5], row[6]);
 
-                strcpy(registry[index].mail, row[0]);
-                strcpy(registry[index].name, row[1]);
-                strcpy(registry[index].surname, row[2]);
-                strcpy(registry[index].city, row[3]);
-                strcpy(registry[index].course, row[4]);
-                registry[index].graduationYear = atoi(row[5]);
-                strcpy(registry[index].skills, row[6]);
+                strcpy(response2->data.registries.registries[index].mail, row[0]);
+                strcpy(response2->data.registries.registries[index].name, row[1]);
+                strcpy(response2->data.registries.registries[index].surname, row[2]);
+                strcpy(response2->data.registries.registries[index].city, row[3]);
+                strcpy(response2->data.registries.registries[index].course, row[4]);
+                response2->data.registries.registries[index].graduationYear = atoi(row[5]);
+                strcpy(response2->data.registries.registries[index].skills, row[6]);
 
                 index += 1;
             }
-
-            memcpy(response2->data.registries.registries, registry, sizeof(registry));
 
             mysql_free_result(result);
 
@@ -309,49 +331,49 @@ Response* LIST_USER_handler(char where_cause[70])
 }
 
 /// @brief Get user based on course
-Response* LIST_BY_COURSE_handler(Request request)
+Response* LIST_BY_COURSE_handler(Request* request)
 {
     char where_cause[70];
-    sprintf(where_cause, "Course = '%s'", request.body.listByCourseRequest.course);
+    sprintf(where_cause, "Course = '%s'", request->body.listByCourseRequest.course);
 
     return LIST_USER_handler(where_cause);
 }
 
 /// @brief Get user based on skill
-Response* LIST_BY_SKILL_handler(Request request)
+Response* LIST_BY_SKILL_handler(Request* request)
 {
     char where_cause[70];
-    sprintf(where_cause, "Skills like '%c%s%c'", '%', request.body.listBySkill.skill, '%');
+    sprintf(where_cause, "Skills like '%c%s%c'", '%', request->body.listBySkill.skill, '%');
 
     return LIST_USER_handler(where_cause);
 }
 
 /// @brief Get user based on graduation year
-Response* LIST_BY_YEAR_handler(Request request)
+Response* LIST_BY_YEAR_handler(Request* request)
 {
     char where_cause[70];
-    sprintf(where_cause, "GraduationYear = '%i'", request.body.listByYearRequest.graduationYear);
+    sprintf(where_cause, "GraduationYear = '%i'", request->body.listByYearRequest.graduationYear);
 
     return LIST_USER_handler(where_cause);
 }
 
 /// @brief Get user based on email
-Response* GET_BY_MAIL_handler(Request request)
+Response* GET_BY_MAIL_handler(Request* request)
 {
     char where_cause[70];
-    sprintf(where_cause, "Mail = '%s'", request.body.byMailRequest.mail);
+    sprintf(where_cause, "Mail = '%s'", request->body.byMailRequest.mail);
 
     return LIST_USER_handler(where_cause);
 }
 
 /// @brief Remove user based on email
-Response* REMOVE_BY_MAIL_handler(Request request)
+Response* REMOVE_BY_MAIL_handler(Request* request)
 {
     Response* response;
     char where_cause[70];
-    sprintf(where_cause, "Mail = '%s'", request.body.byMailRequest.mail);
+    sprintf(where_cause, "Mail = '%s'", request->body.byMailRequest.mail);
 
-    REMOVER_photo(request.body.byMailRequest.mail);
+    REMOVER_photo(request->body.byMailRequest.mail);
 
     return REMOVER_handler(where_cause);
 }

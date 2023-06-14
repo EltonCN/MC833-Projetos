@@ -17,20 +17,30 @@
 #define SA struct sockaddr
 #define SERVER_IP "0.0.0.0"
 
+int maxNumber(int a, int b)
+{
+    if(a>b)
+    {
+        return a;
+    }
+    return b;
+}
+
 /// @brief Processing of incoming requests
-void processRequest(Request request, int sockfd, SA *pcliaddr, socklen_t clilen)
+void processRequest(Request* request, int sockfd, SA *pcliaddr, socklen_t clilen)
 {
     Response* response;
-    response->type = request.type;
 
     // Process the request in the database
-    if (request.type == GET_IMAGE_BY_MAIL) {
-        FragList* fragList = GET_photo(request.body.byMailRequest.mail);
+    if (request->type == GET_IMAGE_BY_MAIL) {
+        FragList* fragList = GET_photo(request->body.byMailRequest.mail);
+        response = malloc(sizeof(Response) + sizeof(Image));
         response->code = fragList->code;
+        response->type = request->type;
 
         printf("Response - code: %d, image size: %d\n", response->code, fragList->size);
 
-        if (response->code == 0 || response->size == 0) {
+        if (response->code == 0 || fragList->size == 0) {
             response->data.image.isFragIfOne = 0;
             
             sendto (sockfd, (void *) response, sizeof(Response), 0, pcliaddr, clilen);
@@ -40,11 +50,11 @@ void processRequest(Request request, int sockfd, SA *pcliaddr, socklen_t clilen)
 
             for (int i = 0; i < fragList->size; i++) {
                 //Copy fragment to request
-                realloc(response, sizeof(Response)+(fragList->frags[i]->size*sizeof(char)));
-                memcpy(&(response->data.image.image.frag), fragList->frags[i], sizeof(ImageFrag)+(fragList->frags[i]->size*sizeof(char)));
+                response = realloc(response, sizeof(Response)+(fragList->frags[i]->size));
+                memcpy(&(response->data.image.image.frag), fragList->frags[i], sizeof(ImageFrag)+(fragList->frags[i]->size));
 
                 //Send
-                sendto (sockfd, (void *) response, sizeof(Response) + fragList->frags[i]->size*sizeof(char), 0, pcliaddr, clilen);
+                sendto (sockfd, (void *) response, sizeof(Response) + fragList->frags[i]->size, 0, pcliaddr, clilen);
             }
         }
 
@@ -52,40 +62,53 @@ void processRequest(Request request, int sockfd, SA *pcliaddr, socklen_t clilen)
         
         return;
     }
-    else if (request.type == SEND_IMAGE)
+    else if (request->type == SEND_IMAGE) {
         response = INSERT_photo(request);
-    else if (request.type == REGISTER)
+
+        if (request->body.imageRequest.image.frag.packageIndex != 0)
+            return;
+    }
+    else if (request->type == REGISTER)
         response = REGISTER_handler(request);
-    else if (request.type == REMOVE_BY_MAIL)
+    else if (request->type == REMOVE_BY_MAIL)
         response = REMOVE_BY_MAIL_handler(request);
-    else if (request.type == LIST_ALL)
+    else if (request->type == LIST_ALL)
         response = LIST_USER_handler(NULL);
-    else if (request.type == LIST_BY_COURSE)
+    else if (request->type == LIST_BY_COURSE)
         response = LIST_BY_COURSE_handler(request);
-    else if (request.type == LIST_BY_SKILL)
+    else if (request->type == LIST_BY_SKILL)
         response = LIST_BY_SKILL_handler(request);
-    else if (request.type == LIST_BY_YEAR)
+    else if (request->type == LIST_BY_YEAR)
         response = LIST_BY_YEAR_handler(request);
-    else if (request.type == GET_BY_MAIL)
+    else if (request->type == GET_BY_MAIL)
         response = GET_BY_MAIL_handler(request);
 
-    printf("Response - code: %d, nRegistry: %d\n", response->code, response->data.registries.nRegistry);
+    int maxSize = MAX_REGISTRY_PER_PACKAGE*sizeof(Registry);
+    maxSize = maxNumber(maxSize, MAX_IMAGE_SIZE_PER_PACKAGE);
+    
+    int size = sizeof(Response)+maxSize;
 
-    sendto (sockfd, (void *) response, sizeof(Response) + sizeof(response->data), 0, pcliaddr, clilen);
+    printf("Response - code: %d, nRegistry: %d", response->code, response->data.registries.nRegistry);
+
+    response->type = request->type;
+    sendto (sockfd, (void *) response, size, 0, pcliaddr, clilen);
 }
 
 void dg_echo(int sockfd, SA *pcliaddr, socklen_t clilen)
 {
     int n;
     socklen_t len;
-    Request request;
+    Request* request = malloc(sizeof(Request)+MAX_IMAGE_SIZE_PER_PACKAGE);
     Response* response;
 
     for ( ; ; ) {
         len = clilen;
-        n = recvfrom (sockfd, (void *) &request, sizeof(Request), 0, pcliaddr, &len);
+        n = recvfrom (sockfd, (void *) request, sizeof(Request) + MAX_IMAGE_SIZE_PER_PACKAGE, 0, pcliaddr, &len);
+
+        printf("RecvFrom - n: %d\n", n);
 
         if (n != -1) {
+
             processRequest(request, sockfd, pcliaddr, len);
         }
     }

@@ -64,25 +64,30 @@ Response* sendAndReceive(Request *request)
 
         //Basic request
         Request* fragRequest = malloc(sizeof(Request)); 
-        request->body.imageRequest.isFragIfOne = 1;
-        request->type = SEND_IMAGE;
+        fragRequest->body.imageRequest.isFragIfOne = 1;
+        fragRequest->type = SEND_IMAGE;
 
         for(int i = 0; i<nPackage; i++)
         {
             //Create fragment
             ImageFrag* frag = getImageFrag(nPackage, imageSize, MAX_IMAGE_SIZE_PER_PACKAGE, 
-                            &(request->body.imageRequest.image.image), 
+                            &(request->body.imageRequest.image.image.image), 
                             &(request->body.imageRequest.image.image.mail),
                             i);
-            
-            //Copy fragment to request
-            request = realloc(request, sizeof(Request)+(frag->size*sizeof(char)));
-            memcpy(&(request->body.imageRequest.image.frag), frag, sizeof(ImageFrag)+(frag->size*sizeof(char)));
-            free(frag);
 
+            //Copy fragment to request
+            fragRequest = realloc(fragRequest, sizeof(Request)+(frag->size));
+            memcpy(&(fragRequest->body.imageRequest.image.frag), frag, sizeof(ImageFrag)+(frag->size));
+            
             //Send
-            send(sockfd, (void *) fragRequest, sizeof(Request)+(frag->size*sizeof(char)), 0);
+            send(sockfd, (void *) fragRequest, sizeof(Request)+(frag->size), 0);
+
+            printf("Sended %d/%d\n", i+1, nPackage);
+
+            free(frag);
         }
+        
+        free(fragRequest);
     }
     else
     {
@@ -93,7 +98,7 @@ Response* sendAndReceive(Request *request)
     //Get Response----------------------------------------------------------------------------
 
     int maxSize = MAX_REGISTRY_PER_PACKAGE*sizeof(Registry);
-    maxSize = maxNumber(maxSize, MAX_IMAGE_SIZE_PER_PACKAGE*sizeof(char));
+    maxSize = maxNumber(maxSize, MAX_IMAGE_SIZE_PER_PACKAGE);
     
     int size = sizeof(Response)+maxSize;
 
@@ -122,6 +127,9 @@ Response* sendAndReceive(Request *request)
         Response** responses = malloc(sizeof(Response*)*nPackage);
         responses[0] = response;
 
+        printf("Received %d/%d\n", 1, nPackage);
+
+        
         for(int i = 1; i<nPackage; i++)
         {
             response = malloc(size);
@@ -129,12 +137,14 @@ Response* sendAndReceive(Request *request)
 
             frags[i] = &(response->data.image.image.frag);
             responses[i] = response;
+
+            printf("Received %d/%d\n", i+1, nPackage);
         }
 
-        //Reconstruc image
+        //Reconstruct image
         RegistryImage *img = restoreImage(frags);
-        size = sizeof(RegistryImage)+(frags[0]->imageSize*sizeof(char));
-        
+        size = sizeof(RegistryImage)+(frags[0]->imageSize);
+
         //Create response and copy image
         response = malloc(sizeof(Response)+size);
         response->code = 1;
@@ -143,13 +153,13 @@ Response* sendAndReceive(Request *request)
         memcpy(&(response->data.image.image.image), img, size);
 
         //Free every non-final-response memory
-        free(img);
-        free(frags);
-        free(responses);
         for(int i = 0; i<nPackage; i++)
         {
             free(responses[i]);
         }
+        free(img);
+        free(frags);
+        free(responses);
     }
 
     return response;

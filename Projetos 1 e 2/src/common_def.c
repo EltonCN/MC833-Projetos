@@ -21,10 +21,10 @@ ImageFrag* getImageFrag(int nPackages, int imageSize, int maxSizePerPackage, cha
         size = imageSize-totalSize;
     }
 
-    int start = (packageIndex-1)*maxSizePerPackage;
+    int start = packageIndex*maxSizePerPackage;
 
-    ImageFrag* frag = malloc(sizeof(ImageFrag)+(size*sizeof(char)));
-
+    ImageFrag* frag = malloc(sizeof(ImageFrag)+(size));
+    
     frag->size = size;
     frag->nPackages = nPackages;
     frag->maxSizePerPackage = maxSizePerPackage;
@@ -32,7 +32,7 @@ ImageFrag* getImageFrag(int nPackages, int imageSize, int maxSizePerPackage, cha
     frag->imageSize = imageSize;
 
     strcpy(frag->mail, mail);
-    memcpy(frag->imageFrag, image[start], size);
+    memcpy(frag->imageFrag, &image[start], size);
 
     return frag;
 }
@@ -42,7 +42,7 @@ ImageFrag* getImageFrag(int nPackages, int imageSize, int maxSizePerPackage, cha
 /// @return Reconstructed image
 RegistryImage* restoreImage(ImageFrag** frags)
 {
-    RegistryImage* image = malloc(sizeof(RegistryImage)+(frags[0]->imageSize*sizeof(char)));
+    RegistryImage* image = malloc(sizeof(RegistryImage)+(frags[0]->imageSize));
 
     image->imageSize = frags[0]->imageSize;
     strcpy(image->mail, frags[0]->mail);
@@ -50,16 +50,7 @@ RegistryImage* restoreImage(ImageFrag** frags)
     for(int i = 0; i<frags[0]->nPackages; i++)
     {
         int start = frags[i]->packageIndex*frags[0]->maxSizePerPackage;
-        
-        int size = frags[0]->maxSizePerPackage;
-        if(frags[i]->packageIndex >= frags[0]->nPackages-1)
-        {
-            int totalSize = (frags[0]->nPackages-1) * frags[0]->maxSizePerPackage;
-
-            size = frags[0]->imageSize-totalSize;
-        }
-
-        memcpy(&(image->image[start]), frags[i]->imageFrag, size);
+        memcpy(&(image->image[start]), frags[i]->imageFrag, frags[i]->size);
     }
 
     return image;
